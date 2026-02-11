@@ -42,6 +42,8 @@ Files/
 *.json
 !appsettings.json
 !appsettings.Development.json
+!Properties/launchSettings.json
+!**/Properties/launchSettings.json
 
 ## Credentials
 **/osrs-profitability-*.json
