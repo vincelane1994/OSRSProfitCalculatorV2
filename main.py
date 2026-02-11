@@ -3,7 +3,14 @@
 Main CLI entry point for OSRS Profit Calculator V2
 """
 
+import logging
 from src.calculator import ProfitCalculator
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 
 def format_gp(amount: int) -> str:

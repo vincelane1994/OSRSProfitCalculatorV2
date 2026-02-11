@@ -2,8 +2,11 @@
 Item price fetcher for OSRS items using the official OSRS API
 """
 
+import logging
 import requests
 from typing import Optional, Dict
+
+logger = logging.getLogger(__name__)
 
 
 class ItemPriceFetcher:
@@ -43,7 +46,7 @@ class ItemPriceFetcher:
             return None
             
         except requests.RequestException as e:
-            print(f"Error fetching price for item {item_id}: {e}")
+            logger.error(f"Error fetching price for item {item_id}: {e}")
             return None
     
     def get_average_price(self, item_id: int) -> Optional[int]:
