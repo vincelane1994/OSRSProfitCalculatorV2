@@ -1,0 +1,48 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.cache
+*.dll
+*.exe
+*.pdb
+*.nupkg
+
+## IDE
+.vs/
+.vscode/
+*.sln.docstates
+*.swp
+*~
+
+## Build
+publish/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+## NuGet
+packages/
+*.nupkg
+**/[Pp]ackages/*
+
+## User-specific
+*.rsuser
+*.DotSettings.user
+
+## OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+## Project specific
+Files/
+*.json
+!appsettings.json
+!appsettings.Development.json
+
+## Credentials
+**/osrs-profitability-*.json
+monday_epic_ids.txt

@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{75A67B86-09BE-4DAE-B3A0-77DDD98480D3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSRSTools.Web", "src\OSRSTools.Web\OSRSTools.Web.csproj", "{9376A6B9-EC5B-45E2-9508-A15710A931E0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSRSTools.Core", "src\OSRSTools.Core\OSRSTools.Core.csproj", "{69CAD4B4-CB58-4448-A2A9-F590A29AB6F4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSRSTools.Infrastructure", "src\OSRSTools.Infrastructure\OSRSTools.Infrastructure.csproj", "{D6659518-3799-4B9D-A7E5-6929B0248FCD}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{2DA3848B-A973-44E0-BE60-FEDAD71113D0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OSRSTools.UnitTests", "tests\OSRSTools.UnitTests\OSRSTools.UnitTests.csproj", "{B9476413-71F5-41FB-98C5-49DFD5FC2EC3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{9376A6B9-EC5B-45E2-9508-A15710A931E0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9376A6B9-EC5B-45E2-9508-A15710A931E0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9376A6B9-EC5B-45E2-9508-A15710A931E0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9376A6B9-EC5B-45E2-9508-A15710A931E0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{69CAD4B4-CB58-4448-A2A9-F590A29AB6F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{69CAD4B4-CB58-4448-A2A9-F590A29AB6F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{69CAD4B4-CB58-4448-A2A9-F590A29AB6F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{69CAD4B4-CB58-4448-A2A9-F590A29AB6F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6659518-3799-4B9D-A7E5-6929B0248FCD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6659518-3799-4B9D-A7E5-6929B0248FCD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6659518-3799-4B9D-A7E5-6929B0248FCD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6659518-3799-4B9D-A7E5-6929B0248FCD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B9476413-71F5-41FB-98C5-49DFD5FC2EC3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B9476413-71F5-41FB-98C5-49DFD5FC2EC3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B9476413-71F5-41FB-98C5-49DFD5FC2EC3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B9476413-71F5-41FB-98C5-49DFD5FC2EC3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{9376A6B9-EC5B-45E2-9508-A15710A931E0} = {75A67B86-09BE-4DAE-B3A0-77DDD98480D3}
+		{69CAD4B4-CB58-4448-A2A9-F590A29AB6F4} = {75A67B86-09BE-4DAE-B3A0-77DDD98480D3}
+		{D6659518-3799-4B9D-A7E5-6929B0248FCD} = {75A67B86-09BE-4DAE-B3A0-77DDD98480D3}
+		{B9476413-71F5-41FB-98C5-49DFD5FC2EC3} = {2DA3848B-A973-44E0-BE60-FEDAD71113D0}
+	EndGlobalSection
+EndGlobal
