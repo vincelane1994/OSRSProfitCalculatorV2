@@ -54,7 +54,7 @@ class ProfitCalculator:
         revenue = output_price * quantity
         cost = total_input_cost * quantity
         profit = revenue - cost
-        profit_per_item = profit // quantity if quantity > 0 else 0
+        profit_per_item = round(profit / quantity) if quantity > 0 else 0
         
         return {
             'output_item_id': output_item_id,

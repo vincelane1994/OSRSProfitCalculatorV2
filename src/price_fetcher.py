@@ -66,7 +66,7 @@ class ItemPriceFetcher:
             low = price_data.get('low')
             
             if high and low:
-                return (high + low) // 2
+                return round((high + low) / 2)
             elif high:
                 return high
             elif low:
