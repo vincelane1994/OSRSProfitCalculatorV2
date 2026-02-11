@@ -100,5 +100,5 @@ class ProfitCalculator:
             'quantity': quantity,
             'profit_per_item': profit_per_item,
             'total_profit': total_profit,
-            'roi': float(profit_per_item) / float(buy_price) * 100.0 if buy_price > 0 else 0.0
+            'roi': profit_per_item / buy_price * 100.0 if buy_price > 0 else 0.0
         }
