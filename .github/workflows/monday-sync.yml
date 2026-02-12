@@ -30,70 +30,67 @@ jobs:
     steps:
       - name: Extract Monday Item ID
         id: extract
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          BODY="${{ github.event.pull_request.body }}"
-          # Handle PR review events where body is on the pull_request sub-object
-          if [ -z "$BODY" ]; then
-            BODY="${{ github.event.pull_request.body }}"
-          fi
-
-          MONDAY_ID=$(echo "$BODY" | grep -oP 'MondayItem:\s*\K[0-9]+' || true)
+          # Use env var to safely handle PR body with special characters
+          MONDAY_ID=$(echo "$PR_BODY" | grep -oP 'MondayItem:\s*\K[0-9]+' || true)
 
           if [ -z "$MONDAY_ID" ]; then
             echo "No MondayItem found in PR body. Skipping."
-            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "Found MondayItem: $MONDAY_ID"
-            echo "skip=false" >> $GITHUB_OUTPUT
-            echo "monday_id=$MONDAY_ID" >> $GITHUB_OUTPUT
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "monday_id=$MONDAY_ID" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Determine Status Update
         if: steps.extract.outputs.skip != 'true'
         id: status
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          REVIEW_STATE: ${{ github.event.review.state }}
         run: |
-          EVENT="${{ github.event_name }}"
-          ACTION="${{ github.event.action }}"
-          MERGED="${{ github.event.pull_request.merged }}"
-          REVIEW_STATE="${{ github.event.review.state }}"
+          echo "Event: $EVENT_NAME, Action: $EVENT_ACTION, Merged: $PR_MERGED, Review: $REVIEW_STATE"
 
-          echo "Event: $EVENT, Action: $ACTION, Merged: $MERGED, Review: $REVIEW_STATE"
-
-          if [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "opened" ]; then
-            echo "status_index=0" >> $GITHUB_OUTPUT
-            echo "status_label=In Progress" >> $GITHUB_OUTPUT
-            echo "set_pr_link=true" >> $GITHUB_OUTPUT
-            echo "post_docs=false" >> $GITHUB_OUTPUT
-          elif [ "$EVENT" = "pull_request_review" ] && [ "$ACTION" = "submitted" ]; then
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$EVENT_ACTION" = "opened" ]; then
+            echo "status_index=0" >> "$GITHUB_OUTPUT"
+            echo "status_label=In Progress" >> "$GITHUB_OUTPUT"
+            echo "set_pr_link=true" >> "$GITHUB_OUTPUT"
+            echo "post_docs=false" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "pull_request_review" ] && [ "$EVENT_ACTION" = "submitted" ]; then
             if [ "$REVIEW_STATE" = "changes_requested" ]; then
-              echo "status_index=103" >> $GITHUB_OUTPUT
-              echo "status_label=Stuck (Changes Requested)" >> $GITHUB_OUTPUT
-              echo "set_pr_link=false" >> $GITHUB_OUTPUT
-              echo "post_docs=false" >> $GITHUB_OUTPUT
+              echo "status_index=103" >> "$GITHUB_OUTPUT"
+              echo "status_label=Stuck (Changes Requested)" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=false" >> "$GITHUB_OUTPUT"
             elif [ "$REVIEW_STATE" = "approved" ]; then
-              echo "status_index=3" >> $GITHUB_OUTPUT
-              echo "status_label=Waiting for review" >> $GITHUB_OUTPUT
-              echo "set_pr_link=false" >> $GITHUB_OUTPUT
-              echo "post_docs=false" >> $GITHUB_OUTPUT
+              echo "status_index=3" >> "$GITHUB_OUTPUT"
+              echo "status_label=Waiting for review" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=false" >> "$GITHUB_OUTPUT"
             else
               echo "Review state '$REVIEW_STATE' - no status change needed."
-              echo "status_index=" >> $GITHUB_OUTPUT
+              echo "status_index=" >> "$GITHUB_OUTPUT"
             fi
-          elif [ "$EVENT" = "pull_request" ] && [ "$ACTION" = "closed" ]; then
-            if [ "$MERGED" = "true" ]; then
-              echo "status_index=1" >> $GITHUB_OUTPUT
-              echo "status_label=Done" >> $GITHUB_OUTPUT
-              echo "set_pr_link=false" >> $GITHUB_OUTPUT
-              echo "post_docs=true" >> $GITHUB_OUTPUT
+          elif [ "$EVENT_NAME" = "pull_request" ] && [ "$EVENT_ACTION" = "closed" ]; then
+            if [ "$PR_MERGED" = "true" ]; then
+              echo "status_index=1" >> "$GITHUB_OUTPUT"
+              echo "status_label=Done" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=true" >> "$GITHUB_OUTPUT"
             else
-              echo "status_index=11" >> $GITHUB_OUTPUT
-              echo "status_label=Ready to start" >> $GITHUB_OUTPUT
-              echo "set_pr_link=false" >> $GITHUB_OUTPUT
-              echo "post_docs=false" >> $GITHUB_OUTPUT
+              echo "status_index=11" >> "$GITHUB_OUTPUT"
+              echo "status_label=Ready to start" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=false" >> "$GITHUB_OUTPUT"
             fi
           else
             echo "Unhandled event combination. Skipping."
-            echo "status_index=" >> $GITHUB_OUTPUT
+            echo "status_index=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Update Monday Status
@@ -106,16 +103,13 @@ jobs:
         run: |
           echo "Updating Monday item $MONDAY_ITEM_ID to status: $STATUS_LABEL (index $STATUS_INDEX)"
 
-          QUERY="mutation { change_column_value(board_id: 18399588298, item_id: $MONDAY_ITEM_ID, column_id: \"task_status\", value: \"{\\\\\"index\\\\\": $STATUS_INDEX}\") { id } }"
-
           RESPONSE=$(curl -s -X POST "https://api.monday.com/v2" \
             -H "Content-Type: application/json" \
             -H "Authorization: $MONDAY_API_KEY" \
-            -d "{\"query\": \"$QUERY\"}")
+            -d "{\"query\": \"mutation { change_column_value(board_id: 18399588298, item_id: $MONDAY_ITEM_ID, column_id: \\\"task_status\\\", value: \\\"{\\\\\\\"index\\\\\\\": $STATUS_INDEX}\\\") { id } }\"}")
 
           echo "Response: $RESPONSE"
 
-          # Check for errors
           if echo "$RESPONSE" | grep -q '"errors"'; then
             echo "::warning::Monday API returned errors for status update"
           else
@@ -131,12 +125,10 @@ jobs:
         run: |
           echo "Setting PR link: $PR_URL on Monday item $MONDAY_ITEM_ID"
 
-          QUERY="mutation { change_column_value(board_id: 18399588298, item_id: $MONDAY_ITEM_ID, column_id: \"text_mm0gf50a\", value: \"\\\\\"$PR_URL\\\\\"\") { id } }"
-
           RESPONSE=$(curl -s -X POST "https://api.monday.com/v2" \
             -H "Content-Type: application/json" \
             -H "Authorization: $MONDAY_API_KEY" \
-            -d "{\"query\": \"$QUERY\"}")
+            -d "{\"query\": \"mutation { change_column_value(board_id: 18399588298, item_id: $MONDAY_ITEM_ID, column_id: \\\"text_mm0gf50a\\\", value: \\\"\\\\\\\"$PR_URL\\\\\\\"\\\") { id } }\"}")
 
           echo "Response: $RESPONSE"
 
@@ -158,27 +150,34 @@ jobs:
         run: |
           echo "Posting merge documentation to Monday item $MONDAY_ITEM_ID"
 
-          # Build documentation body (escape for JSON)
-          DOC_BODY="## PR #${PR_NUMBER} Merged: ${PR_TITLE}\n\n"
-          DOC_BODY+="**Branch:** ${PR_BRANCH}\n"
-          DOC_BODY+="**Merged by:** ${PR_MERGED_BY}\n"
-          DOC_BODY+="**PR URL:** ${PR_URL}\n\n"
-          DOC_BODY+="---\n\n"
-          DOC_BODY+="### PR Description\n\n"
+          # Build documentation using jq to safely handle JSON escaping
+          DOC_BODY=$(cat <<HEREDOC
+          ## PR #${PR_NUMBER} Merged: ${PR_TITLE}
 
-          # Escape the PR body for JSON (replace newlines, quotes, backslashes)
-          ESCAPED_BODY=$(echo "$PR_BODY" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n')
-          DOC_BODY+="${ESCAPED_BODY}"
+          **Branch:** ${PR_BRANCH}
+          **Merged by:** ${PR_MERGED_BY}
+          **PR URL:** ${PR_URL}
 
-          # Escape the full doc body for the GraphQL query
-          ESCAPED_DOC=$(echo -e "$DOC_BODY" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n')
+          ---
 
-          QUERY="mutation { create_update(item_id: $MONDAY_ITEM_ID, body: \"$ESCAPED_DOC\") { id } }"
+          ### PR Description
+
+          HEREDOC
+          )
+
+          # Safely escape PR_BODY and append it
+          FULL_DOC="${DOC_BODY}${PR_BODY}"
+
+          # Use jq to safely build the JSON payload
+          PAYLOAD=$(jq -n \
+            --arg body "$FULL_DOC" \
+            --arg item_id "$MONDAY_ITEM_ID" \
+            '{query: ("mutation { create_update(item_id: " + $item_id + ", body: " + ($body | tojson) + ") { id } }")}')
 
           RESPONSE=$(curl -s -X POST "https://api.monday.com/v2" \
             -H "Content-Type: application/json" \
             -H "Authorization: $MONDAY_API_KEY" \
-            -d "{\"query\": \"$QUERY\"}")
+            -d "$PAYLOAD")
 
           echo "Response: $RESPONSE"
 
