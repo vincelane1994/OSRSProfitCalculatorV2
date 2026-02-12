@@ -1,0 +1,188 @@
+name: Monday ↔ GitHub Sync
+
+# Syncs GitHub PR lifecycle events to Monday.com task statuses.
+# PRs must include "MondayItem: <NUMERIC_ID>" in the body to be tracked.
+#
+# Status mapping:
+#   PR opened          → In Progress (index 0)
+#   Review: changes    → Stuck (index 103) — used as "Changes Requested"
+#   Review: approved   → Waiting for review (index 3)
+#   PR merged + docs   → Done (index 1)
+#   PR closed (no merge) → Ready to start (index 11)
+#
+# Monday columns used:
+#   task_status        — Status column (status type)
+#   text_mm0gf50a      — PR Link (text type)
+
+on:
+  pull_request:
+    types: [opened, closed]
+  pull_request_review:
+    types: [submitted]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  sync-monday:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract Monday Item ID
+        id: extract
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          # Use env var to safely handle PR body with special characters
+          MONDAY_ID=$(echo "$PR_BODY" | grep -oP 'MondayItem:\s*\K[0-9]+' || true)
+
+          if [ -z "$MONDAY_ID" ]; then
+            echo "No MondayItem found in PR body. Skipping."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Found MondayItem: $MONDAY_ID"
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "monday_id=$MONDAY_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Determine Status Update
+        if: steps.extract.outputs.skip != 'true'
+        id: status
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_ACTION: ${{ github.event.action }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          REVIEW_STATE: ${{ github.event.review.state }}
+        run: |
+          echo "Event: $EVENT_NAME, Action: $EVENT_ACTION, Merged: $PR_MERGED, Review: $REVIEW_STATE"
+
+          if [ "$EVENT_NAME" = "pull_request" ] && [ "$EVENT_ACTION" = "opened" ]; then
+            echo "status_index=0" >> "$GITHUB_OUTPUT"
+            echo "status_label=In Progress" >> "$GITHUB_OUTPUT"
+            echo "set_pr_link=true" >> "$GITHUB_OUTPUT"
+            echo "post_docs=false" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "pull_request_review" ] && [ "$EVENT_ACTION" = "submitted" ]; then
+            if [ "$REVIEW_STATE" = "changes_requested" ]; then
+              echo "status_index=103" >> "$GITHUB_OUTPUT"
+              echo "status_label=Stuck (Changes Requested)" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=false" >> "$GITHUB_OUTPUT"
+            elif [ "$REVIEW_STATE" = "approved" ]; then
+              echo "status_index=3" >> "$GITHUB_OUTPUT"
+              echo "status_label=Waiting for review" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Review state '$REVIEW_STATE' - no status change needed."
+              echo "status_index=" >> "$GITHUB_OUTPUT"
+            fi
+          elif [ "$EVENT_NAME" = "pull_request" ] && [ "$EVENT_ACTION" = "closed" ]; then
+            if [ "$PR_MERGED" = "true" ]; then
+              echo "status_index=1" >> "$GITHUB_OUTPUT"
+              echo "status_label=Done" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=true" >> "$GITHUB_OUTPUT"
+            else
+              echo "status_index=11" >> "$GITHUB_OUTPUT"
+              echo "status_label=Ready to start" >> "$GITHUB_OUTPUT"
+              echo "set_pr_link=false" >> "$GITHUB_OUTPUT"
+              echo "post_docs=false" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "Unhandled event combination. Skipping."
+            echo "status_index=" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Update Monday Status
+        if: steps.extract.outputs.skip != 'true' && steps.status.outputs.status_index != ''
+        env:
+          MONDAY_API_KEY: ${{ secrets.MONDAY_API_KEY }}
+          MONDAY_ITEM_ID: ${{ steps.extract.outputs.monday_id }}
+          STATUS_INDEX: ${{ steps.status.outputs.status_index }}
+          STATUS_LABEL: ${{ steps.status.outputs.status_label }}
+        run: |
+          echo "Updating Monday item $MONDAY_ITEM_ID to status: $STATUS_LABEL (index $STATUS_INDEX)"
+
+          RESPONSE=$(curl -s -X POST "https://api.monday.com/v2" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: $MONDAY_API_KEY" \
+            -d "{\"query\": \"mutation { change_column_value(board_id: 18399588298, item_id: $MONDAY_ITEM_ID, column_id: \\\"task_status\\\", value: \\\"{\\\\\\\"index\\\\\\\": $STATUS_INDEX}\\\") { id } }\"}")
+
+          echo "Response: $RESPONSE"
+
+          if echo "$RESPONSE" | grep -q '"errors"'; then
+            echo "::warning::Monday API returned errors for status update"
+          else
+            echo "Status updated successfully"
+          fi
+
+      - name: Set PR Link on Monday
+        if: steps.extract.outputs.skip != 'true' && steps.status.outputs.set_pr_link == 'true'
+        env:
+          MONDAY_API_KEY: ${{ secrets.MONDAY_API_KEY }}
+          MONDAY_ITEM_ID: ${{ steps.extract.outputs.monday_id }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+        run: |
+          echo "Setting PR link: $PR_URL on Monday item $MONDAY_ITEM_ID"
+
+          RESPONSE=$(curl -s -X POST "https://api.monday.com/v2" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: $MONDAY_API_KEY" \
+            -d "{\"query\": \"mutation { change_column_value(board_id: 18399588298, item_id: $MONDAY_ITEM_ID, column_id: \\\"text_mm0gf50a\\\", value: \\\"\\\\\\\"$PR_URL\\\\\\\"\\\") { id } }\"}")
+
+          echo "Response: $RESPONSE"
+
+          if echo "$RESPONSE" | grep -q '"errors"'; then
+            echo "::warning::Monday API returned errors for PR link update"
+          fi
+
+      - name: Post Documentation on Merge
+        if: steps.extract.outputs.skip != 'true' && steps.status.outputs.post_docs == 'true'
+        env:
+          MONDAY_API_KEY: ${{ secrets.MONDAY_API_KEY }}
+          MONDAY_ITEM_ID: ${{ steps.extract.outputs.monday_id }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          PR_BRANCH: ${{ github.event.pull_request.head.ref }}
+          PR_MERGED_BY: ${{ github.event.pull_request.merged_by.login }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          echo "Posting merge documentation to Monday item $MONDAY_ITEM_ID"
+
+          # Build documentation using jq to safely handle JSON escaping
+          DOC_BODY=$(cat <<HEREDOC
+          ## PR #${PR_NUMBER} Merged: ${PR_TITLE}
+
+          **Branch:** ${PR_BRANCH}
+          **Merged by:** ${PR_MERGED_BY}
+          **PR URL:** ${PR_URL}
+
+          ---
+
+          ### PR Description
+
+          HEREDOC
+          )
+
+          # Safely escape PR_BODY and append it
+          FULL_DOC="${DOC_BODY}${PR_BODY}"
+
+          # Use jq to safely build the JSON payload
+          PAYLOAD=$(jq -n \
+            --arg body "$FULL_DOC" \
+            --arg item_id "$MONDAY_ITEM_ID" \
+            '{query: ("mutation { create_update(item_id: " + $item_id + ", body: " + ($body | tojson) + ") { id } }")}')
+
+          RESPONSE=$(curl -s -X POST "https://api.monday.com/v2" \
+            -H "Content-Type: application/json" \
+            -H "Authorization: $MONDAY_API_KEY" \
+            -d "$PAYLOAD")
+
+          echo "Response: $RESPONSE"
+
+          if echo "$RESPONSE" | grep -q '"errors"'; then
+            echo "::warning::Monday API returned errors for documentation post"
+          else
+            echo "Documentation posted successfully"
+          fi
