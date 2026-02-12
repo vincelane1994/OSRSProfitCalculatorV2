@@ -1,5 +1,6 @@
 using OSRSTools.Core.Configuration;
 using OSRSTools.Core.Interfaces;
+using OSRSTools.Core.Services;
 using OSRSTools.Infrastructure.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,6 +21,9 @@ builder.Services.Configure<PriceWeightSettings>(
 builder.Services.AddControllersWithViews();
 builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
+
+// Domain services
+builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 
 // Infrastructure
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
