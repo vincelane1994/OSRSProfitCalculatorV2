@@ -399,18 +399,19 @@ body.sidebar-collapsed .main-content {
 
 .carousel-arrow {
     background: none;
-    border: 1px solid var(--card-border);
+    border: none;
     color: var(--text-secondary);
     border-radius: 4px;
-    padding: 4px 6px;
+    padding: 6px 8px;
     cursor: pointer;
-    font-size: 0.9rem;
-    transition: color var(--transition-speed), border-color var(--transition-speed);
+    font-size: 1rem;
+    line-height: 1;
+    transition: color var(--transition-speed), background-color var(--transition-speed);
 }
 
 .carousel-arrow:hover {
     color: var(--accent);
-    border-color: var(--accent);
+    background-color: var(--sidebar-hover);
 }
 
 .carousel-dots {
