@@ -183,3 +183,9 @@ Config classes live in `Core/Configuration/`. Settings are in `appsettings.json`
 5. **Nature Rune in tests:** Keep Nature Rune (ID 561) in the prices dictionary but NOT in the mappings dictionary, or it will appear as a regular item in results.
 
 6. **gh CLI path on Windows:** `gh` may not be on PATH. Full path: `"/c/Program Files/GitHub CLI/gh.exe"`.
+
+7. **JSON serialization casing:** `System.Text.Json.JsonSerializer.Serialize()` defaults to PascalCase. When serializing C# objects for JavaScript, always use `new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }` since JS expects camelCase property names.
+
+## General Rules
+
+- **No Python.** This is a .NET/C#/JavaScript codebase only. Do not use Python for any scripts, tools, or utilities.
