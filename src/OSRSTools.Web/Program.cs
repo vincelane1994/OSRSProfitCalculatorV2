@@ -1,7 +1,9 @@
 using OSRSTools.Core.Configuration;
 using OSRSTools.Core.Interfaces;
 using OSRSTools.Core.Services;
+using OSRSTools.Infrastructure.Api;
 using OSRSTools.Infrastructure.Caching;
+using OSRSTools.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -19,14 +21,31 @@ builder.Services.Configure<PriceWeightSettings>(
 
 // Core services
 builder.Services.AddControllersWithViews();
-builder.Services.AddHttpClient();
 builder.Services.AddMemoryCache();
 
 // Domain services
+builder.Services.AddScoped<IProfitCalculationService, ProfitCalculationService>();
 builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 
-// Infrastructure
+// Infrastructure — API client
+// AddHttpClient registers OsrsWikiApiClient as transient by default.
+// We override with AddScoped so that all three injection points
+// (concrete, IItemMappingRepository, IPriceRepository) share one instance
+// per request scope — critical because _highAlchValues is populated in one
+// call path and read from another.
+builder.Services.AddHttpClient<OsrsWikiApiClient>();
+builder.Services.AddScoped<OsrsWikiApiClient>(sp =>
+{
+    var factory = sp.GetRequiredService<IHttpClientFactory>();
+    var httpClient = factory.CreateClient(nameof(OsrsWikiApiClient));
+    return ActivatorUtilities.CreateInstance<OsrsWikiApiClient>(sp,httpClient);
+});
+builder.Services.AddScoped<IItemMappingRepository>(sp => sp.GetRequiredService<OsrsWikiApiClient>());
+builder.Services.AddScoped<IPriceRepository>(sp => sp.GetRequiredService<OsrsWikiApiClient>());
+
+// Infrastructure — caching and data orchestration
 builder.Services.AddSingleton<ICacheService, MemoryCacheService>();
+builder.Services.AddScoped<IDataFetchService, DataFetchService>();
 
 var app = builder.Build();
 
