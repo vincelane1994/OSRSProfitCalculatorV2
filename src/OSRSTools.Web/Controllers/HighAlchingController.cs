@@ -19,6 +19,8 @@ public class HighAlchingController : Controller
         {
             var items = await _highAlchingService.GetProfitableItemsAsync();
 
+            ViewData["LastSync"] = DateTime.Now.ToString("h:mm tt");
+
             var viewModel = new HighAlchViewModel
             {
                 Items = items.ToList()
