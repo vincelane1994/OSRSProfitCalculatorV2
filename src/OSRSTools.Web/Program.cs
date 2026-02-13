@@ -25,6 +25,7 @@ builder.Services.AddMemoryCache();
 
 // Domain services
 builder.Services.AddScoped<IProfitCalculationService, ProfitCalculationService>();
+builder.Services.AddScoped<IFlipCalculator, FlipCalculator>();
 builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 
 // Infrastructure — API client
