@@ -378,3 +378,57 @@ body.sidebar-collapsed .main-content {
     outline: none;
     box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.2);
 }
+
+/* ── Dashboard Carousel ───────────────────────── */
+
+.carousel-card {
+    position: relative;
+}
+
+.carousel-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.carousel-content {
+    flex: 1;
+    text-align: center;
+    min-height: 70px;
+}
+
+.carousel-arrow {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--text-secondary);
+    border-radius: 4px;
+    padding: 4px 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: color var(--transition-speed), border-color var(--transition-speed);
+}
+
+.carousel-arrow:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.carousel-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.carousel-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: var(--card-border);
+    cursor: pointer;
+    transition: background-color var(--transition-speed);
+}
+
+.carousel-dot.active {
+    background-color: var(--accent);
+}
