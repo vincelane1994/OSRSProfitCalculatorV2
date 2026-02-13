@@ -22,6 +22,7 @@ public class DataFetchService : IDataFetchService
     private readonly ILogger<DataFetchService> _logger;
 
     private const string MappingsCacheKey = "item_mappings";
+    private const string HighAlchCacheKey = "high_alch_values";
     private const string CompletePricesCacheKey = "complete_prices";
 
     public DataFetchService(
@@ -52,7 +53,18 @@ public class DataFetchService : IDataFetchService
         var mappings = await _mappingRepository.GetAllMappingsAsync(cancellationToken);
         _cache.Set(MappingsCacheKey, mappings, _cacheSettings.MappingDuration);
 
-        _logger.LogInformation("Cached {Count} item mappings for {Duration}", mappings.Count, _cacheSettings.MappingDuration);
+        // Cache high alch values alongside mappings. The API client populates
+        // _highAlchValues during GetAllMappingsAsync, but that dictionary lives
+        // on the scoped instance and is lost on the next request. By caching
+        // the values in the singleton cache, they survive across request scopes.
+        var highAlchValues = new Dictionary<int, int?>(mappings.Count);
+        foreach (var itemId in mappings.Keys)
+        {
+            highAlchValues[itemId] = _apiClient.GetHighAlchValue(itemId);
+        }
+        _cache.Set(HighAlchCacheKey, (IReadOnlyDictionary<int, int?>)highAlchValues, _cacheSettings.MappingDuration);
+
+        _logger.LogInformation("Cached {Count} item mappings and high alch values for {Duration}", mappings.Count, _cacheSettings.MappingDuration);
         return mappings;
     }
 
@@ -126,8 +138,17 @@ public class DataFetchService : IDataFetchService
 
     public async Task<int?> GetHighAlchValueAsync(int itemId, CancellationToken cancellationToken = default)
     {
-        // Ensure mappings are loaded (which also loads high alch values in the API client)
+        // Ensure mappings (and high alch values) are loaded and cached
         await GetMappingsAsync(cancellationToken);
-        return _apiClient.GetHighAlchValue(itemId);
+
+        // Read from singleton cache rather than the scoped API client instance,
+        // since the instance's _highAlchValues dictionary is empty when mappings
+        // were served from cache (no GetAllMappingsAsync call to populate it).
+        if (_cache.TryGet<IReadOnlyDictionary<int, int?>>(HighAlchCacheKey, out var highAlchValues) && highAlchValues != null)
+        {
+            return highAlchValues.TryGetValue(itemId, out var value) ? value : null;
+        }
+
+        return null;
     }
 }
