@@ -32,6 +32,7 @@
     </header>
 
     <!-- Sidebar Navigation -->
+    @{ var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? ""; }
     <nav class="sidebar" id="sidebar">
         <div class="sidebar-content">
             <!-- Profit Calculators Category -->
@@ -44,25 +45,25 @@
                 <div class="collapse show" id="calcMenu">
                     <ul class="sidebar-nav">
                         <li>
-                            <a asp-controller="HighAlching" asp-action="Index" class="nav-link" title="High Alching">
+                            <a asp-controller="HighAlching" asp-action="Index" class="nav-link @(currentController == "HighAlching" ? "active" : "")" title="High Alching">
                                 <i class="bi bi-magic"></i>
                                 <span class="nav-label">High Alching</span>
                             </a>
                         </li>
                         <li>
-                            <a asp-controller="Flipping" asp-action="Index" class="nav-link" title="Flipping">
+                            <a asp-controller="Flipping" asp-action="Index" class="nav-link @(currentController == "Flipping" ? "active" : "")" title="Flipping">
                                 <i class="bi bi-arrow-left-right"></i>
                                 <span class="nav-label">Flipping</span>
                             </a>
                         </li>
                         <li>
-                            <a asp-controller="Smithing" asp-action="Index" class="nav-link" title="Smithing">
+                            <a asp-controller="Smithing" asp-action="Index" class="nav-link @(currentController == "Smithing" ? "active" : "")" title="Smithing">
                                 <i class="bi bi-hammer"></i>
                                 <span class="nav-label">Smithing</span>
                             </a>
                         </li>
                         <li>
-                            <a asp-controller="Herblore" asp-action="Index" class="nav-link" title="Herblore">
+                            <a asp-controller="Herblore" asp-action="Index" class="nav-link @(currentController == "Herblore" ? "active" : "")" title="Herblore">
                                 <i class="bi bi-flower1"></i>
                                 <span class="nav-label">Herblore</span>
                             </a>
@@ -81,13 +82,13 @@
                 <div class="collapse show" id="reportsMenu">
                     <ul class="sidebar-nav">
                         <li>
-                            <a asp-controller="Home" asp-action="Index" class="nav-link" title="Dashboard">
+                            <a asp-controller="Home" asp-action="Index" class="nav-link @(currentController == "Home" ? "active" : "")" title="Dashboard">
                                 <i class="bi bi-speedometer2"></i>
                                 <span class="nav-label">Dashboard</span>
                             </a>
                         </li>
                         <li>
-                            <a asp-controller="Report" asp-action="Index" class="nav-link" title="Export">
+                            <a asp-controller="Report" asp-action="Index" class="nav-link @(currentController == "Report" ? "active" : "")" title="Export">
                                 <i class="bi bi-download"></i>
                                 <span class="nav-label">Export</span>
                             </a>
