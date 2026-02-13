@@ -1,6 +1,6 @@
 // High Alchemy client-side filtering and sorting
 
-var currentSort = { field: 'profit', ascending: false };
+var currentSort = { field: 'roiPercent', ascending: false };
 
 document.addEventListener('DOMContentLoaded', function () {
     applyFilters();
