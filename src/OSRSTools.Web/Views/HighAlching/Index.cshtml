@@ -91,7 +91,7 @@
 
 @section Scripts {
     <script>
-        var items = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items));
+        var items = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
     </script>
     <script src="~/js/highalch-filter.js"></script>
 }
