@@ -15,15 +15,18 @@ public class HighAlchingService : IHighAlchingService
 
     private readonly IDataFetchService _dataFetchService;
     private readonly IProfitCalculationService _profitCalcService;
+    private readonly IPriceRecommendationService _priceRecommendationService;
     private readonly ILogger<HighAlchingService> _logger;
 
     public HighAlchingService(
         IDataFetchService dataFetchService,
         IProfitCalculationService profitCalcService,
+        IPriceRecommendationService priceRecommendationService,
         ILogger<HighAlchingService> logger)
     {
         _dataFetchService = dataFetchService;
         _profitCalcService = profitCalcService;
+        _priceRecommendationService = priceRecommendationService;
         _logger = logger;
     }
 
@@ -69,7 +72,7 @@ public class HighAlchingService : IHighAlchingService
                 continue;
 
             // Get recommended buy price
-            var recommendation = _profitCalcService.CalculateRecommendedPrices(priceData);
+            var recommendation = _priceRecommendationService.CalculateRecommendedPrices(priceData);
             var buyPrice = recommendation.RecommendedBuyPrice;
             if (buyPrice <= 0)
                 continue;
@@ -116,7 +119,7 @@ public class HighAlchingService : IHighAlchingService
         if (!prices.TryGetValue(NatureRuneItemId, out var natureRuneData))
             return 0;
 
-        var recommendation = _profitCalcService.CalculateRecommendedPrices(natureRuneData);
+        var recommendation = _priceRecommendationService.CalculateRecommendedPrices(natureRuneData);
         return recommendation.RecommendedBuyPrice > 0
             ? recommendation.RecommendedBuyPrice
             : natureRuneData.LatestBuyPrice ?? 0;

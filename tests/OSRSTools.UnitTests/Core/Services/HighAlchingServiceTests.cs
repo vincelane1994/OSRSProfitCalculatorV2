@@ -11,6 +11,7 @@ public class HighAlchingServiceTests
 {
     private readonly Mock<IDataFetchService> _dataFetchMock = new();
     private readonly Mock<IProfitCalculationService> _profitCalcMock = new();
+    private readonly Mock<IPriceRecommendationService> _priceRecommendationMock = new();
     private readonly Mock<ILogger<HighAlchingService>> _loggerMock = new();
     private readonly HighAlchingService _sut;
 
@@ -21,6 +22,7 @@ public class HighAlchingServiceTests
         _sut = new HighAlchingService(
             _dataFetchMock.Object,
             _profitCalcMock.Object,
+            _priceRecommendationMock.Object,
             _loggerMock.Object);
     }
 
@@ -272,7 +274,7 @@ public class HighAlchingServiceTests
 
     private void SetupNatureRunePrice(Dictionary<int, ItemPriceData> prices, int buyPrice)
     {
-        _profitCalcMock
+        _priceRecommendationMock
             .Setup(x => x.CalculateRecommendedPrices(It.Is<ItemPriceData>(p => p.ItemId == NatureRuneId)))
             .Returns(new PriceRecommendation
             {
@@ -285,7 +287,7 @@ public class HighAlchingServiceTests
 
     private void SetupRecommendedPrice(int itemId, int buyPrice)
     {
-        _profitCalcMock
+        _priceRecommendationMock
             .Setup(x => x.CalculateRecommendedPrices(It.Is<ItemPriceData>(p => p.ItemId == itemId)))
             .Returns(new PriceRecommendation
             {
