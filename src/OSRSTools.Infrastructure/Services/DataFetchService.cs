@@ -3,7 +3,6 @@ using Microsoft.Extensions.Options;
 using OSRSTools.Core.Configuration;
 using OSRSTools.Core.Entities;
 using OSRSTools.Core.Interfaces;
-using OSRSTools.Infrastructure.Api;
 
 namespace OSRSTools.Infrastructure.Services;
 
@@ -17,7 +16,6 @@ public class DataFetchService : IDataFetchService
     private readonly IItemMappingRepository _mappingRepository;
     private readonly IPriceRepository _priceRepository;
     private readonly ICacheService _cache;
-    private readonly OsrsWikiApiClient _apiClient;
     private readonly CacheSettings _cacheSettings;
     private readonly ILogger<DataFetchService> _logger;
 
@@ -29,14 +27,12 @@ public class DataFetchService : IDataFetchService
         IItemMappingRepository mappingRepository,
         IPriceRepository priceRepository,
         ICacheService cache,
-        OsrsWikiApiClient apiClient,
         IOptions<CacheSettings> cacheSettings,
         ILogger<DataFetchService> logger)
     {
         _mappingRepository = mappingRepository;
         _priceRepository = priceRepository;
         _cache = cache;
-        _apiClient = apiClient;
         _cacheSettings = cacheSettings.Value;
         _logger = logger;
     }
@@ -60,7 +56,7 @@ public class DataFetchService : IDataFetchService
         var highAlchValues = new Dictionary<int, int?>(mappings.Count);
         foreach (var itemId in mappings.Keys)
         {
-            highAlchValues[itemId] = _apiClient.GetHighAlchValue(itemId);
+            highAlchValues[itemId] = _mappingRepository.GetHighAlchValue(itemId);
         }
         _cache.Set(HighAlchCacheKey, (IReadOnlyDictionary<int, int?>)highAlchValues, _cacheSettings.MappingDuration);
 

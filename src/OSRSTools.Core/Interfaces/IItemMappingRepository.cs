@@ -16,4 +16,10 @@ public interface IItemMappingRepository
     /// Gets a single item mapping by ID, or null if not found.
     /// </summary>
     Task<ItemMapping?> GetByIdAsync(int itemId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the high alchemy value for an item.
+    /// Returns null if mappings haven't been fetched yet or item has no alch value.
+    /// </summary>
+    int? GetHighAlchValue(int itemId);
 }
