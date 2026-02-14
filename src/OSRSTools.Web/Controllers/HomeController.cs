@@ -7,10 +7,14 @@ namespace OSRSTools.Web.Controllers;
 public class HomeController : Controller
 {
     private readonly IHighAlchingService _highAlchingService;
+    private readonly ILogger<HomeController> _logger;
 
-    public HomeController(IHighAlchingService highAlchingService)
+    public HomeController(
+        IHighAlchingService highAlchingService,
+        ILogger<HomeController> logger)
     {
         _highAlchingService = highAlchingService;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -25,9 +29,9 @@ public class HomeController : Controller
                 .Take(5)
                 .ToList();
         }
-        catch
+        catch (Exception ex)
         {
-            // Dashboard should still render even if High Alch data fails
+            _logger.LogError(ex, "Failed to load High Alchemy data for dashboard");
         }
 
         return View(model);
