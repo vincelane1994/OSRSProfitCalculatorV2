@@ -139,8 +139,8 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
             {
                 AvgBuyPrice = priceDto.AvgHighPrice,
                 AvgSellPrice = priceDto.AvgLowPrice,
-                BuyVolume = priceDto.HighPriceVolume.HasValue ? (int)priceDto.HighPriceVolume.Value : null,
-                SellVolume = priceDto.LowPriceVolume.HasValue ? (int)priceDto.LowPriceVolume.Value : null
+                BuyVolume = priceDto.HighPriceVolume.HasValue ? (int)Math.Min(priceDto.HighPriceVolume.Value, int.MaxValue) : null,
+                SellVolume = priceDto.LowPriceVolume.HasValue ? (int)Math.Min(priceDto.LowPriceVolume.Value, int.MaxValue) : null
             };
         }
 
