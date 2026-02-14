@@ -1,4 +1,3 @@
-using OSRSTools.Core.Entities;
 using OSRSTools.Core.ValueObjects;
 
 namespace OSRSTools.Core.Interfaces;
@@ -13,14 +12,6 @@ public interface IProfitCalculationService
     /// Calculates GE tax for a sell price using configured rate and cap.
     /// </summary>
     TaxCalculation CalculateTax(int sellPrice);
-
-    /// <summary>
-    /// Calculates weighted recommended buy/sell prices from time window data.
-    /// Buy price = weighted avg of instant-sell prices (where sellers dump).
-    /// Sell price = weighted avg of instant-buy prices (where buyers overpay).
-    /// Missing windows have their weight redistributed proportionally.
-    /// </summary>
-    PriceRecommendation CalculateRecommendedPrices(ItemPriceData priceData);
 
     /// <summary>
     /// Calculates profit for a generic buy→sell operation (1 input → 1 output).

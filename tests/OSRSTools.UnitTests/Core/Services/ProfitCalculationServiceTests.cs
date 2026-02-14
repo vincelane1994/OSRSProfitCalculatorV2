@@ -1,6 +1,5 @@
 using Microsoft.Extensions.Options;
 using OSRSTools.Core.Configuration;
-using OSRSTools.Core.Entities;
 using OSRSTools.Core.Services;
 using Xunit;
 
@@ -13,14 +12,7 @@ public class ProfitCalculationServiceTests
     public ProfitCalculationServiceTests()
     {
         var taxSettings = Options.Create(new TaxSettings { Rate = 0.02, Cap = 5_000_000 });
-        var priceWeights = Options.Create(new PriceWeightSettings
-        {
-            FiveMinute = 0.10,
-            OneHour = 0.35,
-            SixHour = 0.35,
-            TwentyFourHour = 0.20
-        });
-        _sut = new ProfitCalculationService(taxSettings, priceWeights);
+        _sut = new ProfitCalculationService(taxSettings);
     }
 
     #region CalculateTax
@@ -222,108 +214,4 @@ public class ProfitCalculationServiceTests
 
     #endregion
 
-    #region CalculateRecommendedPrices
-
-    [Fact]
-    public void CalculateRecommendedPrices_AllWindowsAvailable_ReturnsWeightedAverage()
-    {
-        var priceData = new ItemPriceData
-        {
-            ItemId = 1,
-            TimeWindows = new Dictionary<TimeWindow, TimeWindowPrice>
-            {
-                [TimeWindow.FiveMinute] = new() { AvgBuyPrice = 100, AvgSellPrice = 90 },
-                [TimeWindow.OneHour] = new() { AvgBuyPrice = 110, AvgSellPrice = 95 },
-                [TimeWindow.SixHour] = new() { AvgBuyPrice = 105, AvgSellPrice = 92 },
-                [TimeWindow.TwentyFourHour] = new() { AvgBuyPrice = 108, AvgSellPrice = 93 }
-            }
-        };
-
-        var result = _sut.CalculateRecommendedPrices(priceData);
-
-        Assert.Equal(4, result.WindowsUsedForBuy);
-        Assert.Equal(4, result.WindowsUsedForSell);
-        Assert.True(result.HasSufficientData);
-        Assert.True(result.RecommendedSellPrice > 0);
-        Assert.True(result.RecommendedBuyPrice > 0);
-        Assert.True(result.GrossMargin > 0);
-    }
-
-    [Fact]
-    public void CalculateRecommendedPrices_MissingWindows_RedistributesWeight()
-    {
-        var priceData = new ItemPriceData
-        {
-            ItemId = 1,
-            TimeWindows = new Dictionary<TimeWindow, TimeWindowPrice>
-            {
-                [TimeWindow.OneHour] = new() { AvgBuyPrice = 100, AvgSellPrice = 90 },
-                [TimeWindow.SixHour] = new() { AvgBuyPrice = 110, AvgSellPrice = 95 }
-            }
-        };
-
-        var result = _sut.CalculateRecommendedPrices(priceData);
-
-        Assert.Equal(2, result.WindowsUsedForBuy);
-        Assert.Equal(2, result.WindowsUsedForSell);
-        Assert.True(result.HasSufficientData);
-    }
-
-    [Fact]
-    public void CalculateRecommendedPrices_OnlyOneWindow_InsufficientData()
-    {
-        var priceData = new ItemPriceData
-        {
-            ItemId = 1,
-            TimeWindows = new Dictionary<TimeWindow, TimeWindowPrice>
-            {
-                [TimeWindow.OneHour] = new() { AvgBuyPrice = 100, AvgSellPrice = 90 }
-            }
-        };
-
-        var result = _sut.CalculateRecommendedPrices(priceData);
-
-        Assert.Equal(1, result.WindowsUsedForBuy);
-        Assert.False(result.HasSufficientData);
-    }
-
-    [Fact]
-    public void CalculateRecommendedPrices_NoWindows_ReturnsZero()
-    {
-        var priceData = new ItemPriceData
-        {
-            ItemId = 1,
-            TimeWindows = new Dictionary<TimeWindow, TimeWindowPrice>()
-        };
-
-        var result = _sut.CalculateRecommendedPrices(priceData);
-
-        Assert.Equal(0, result.RecommendedBuyPrice);
-        Assert.Equal(0, result.RecommendedSellPrice);
-        Assert.Equal(0, result.WindowsUsedForBuy);
-    }
-
-    [Fact]
-    public void CalculateRecommendedPrices_NullPricesInWindows_ExcludesThoseWindows()
-    {
-        var priceData = new ItemPriceData
-        {
-            ItemId = 1,
-            TimeWindows = new Dictionary<TimeWindow, TimeWindowPrice>
-            {
-                [TimeWindow.FiveMinute] = new() { AvgBuyPrice = null, AvgSellPrice = null },
-                [TimeWindow.OneHour] = new() { AvgBuyPrice = 100, AvgSellPrice = 90 },
-                [TimeWindow.SixHour] = new() { AvgBuyPrice = 110, AvgSellPrice = 95 },
-                [TimeWindow.TwentyFourHour] = new() { AvgBuyPrice = 105, AvgSellPrice = 92 }
-            }
-        };
-
-        var result = _sut.CalculateRecommendedPrices(priceData);
-
-        Assert.Equal(3, result.WindowsUsedForBuy);
-        Assert.Equal(3, result.WindowsUsedForSell);
-        Assert.True(result.HasSufficientData);
-    }
-
-    #endregion
 }
