@@ -1,3 +1,5 @@
+using Polly;
+using Polly.Extensions.Http;
 using OSRSTools.Core.Configuration;
 using OSRSTools.Core.Interfaces;
 using OSRSTools.Core.Services;
@@ -35,7 +37,40 @@ builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 // (concrete, IItemMappingRepository, IPriceRepository) share one instance
 // per request scope — critical because _highAlchValues is populated in one
 // call path and read from another.
-builder.Services.AddHttpClient<OsrsWikiApiClient>();
+builder.Services.AddHttpClient<OsrsWikiApiClient>()
+    .AddPolicyHandler((services, _) =>
+        HttpPolicyExtensions.HandleTransientHttpError()
+            .WaitAndRetryAsync(3,
+                attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)),
+                onRetry: (outcome, delay, attempt, _) =>
+                {
+                    var logger = services.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("PollyHttpRetry");
+                    logger.LogWarning(
+                        "Retry {Attempt} after {Delay}s due to {StatusCode}",
+                        attempt, delay.TotalSeconds,
+                        outcome.Result?.StatusCode.ToString() ?? outcome.Exception?.Message);
+                }))
+    .AddPolicyHandler((services, _) =>
+        HttpPolicyExtensions.HandleTransientHttpError()
+            .CircuitBreakerAsync(5,
+                TimeSpan.FromSeconds(30),
+                onBreak: (outcome, duration) =>
+                {
+                    var logger = services.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("PollyCircuitBreaker");
+                    logger.LogError(
+                        "Circuit breaker opened for {Duration}s due to {Reason}",
+                        duration.TotalSeconds,
+                        outcome.Result?.StatusCode.ToString() ?? outcome.Exception?.Message);
+                },
+                onReset: () =>
+                {
+                    var logger = services.GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("PollyCircuitBreaker");
+                    logger.LogInformation("Circuit breaker reset");
+                }))
+    .AddPolicyHandler(Policy.TimeoutAsync<HttpResponseMessage>(TimeSpan.FromSeconds(10)));
 builder.Services.AddScoped<OsrsWikiApiClient>(sp =>
 {
     var factory = sp.GetRequiredService<IHttpClientFactory>();
