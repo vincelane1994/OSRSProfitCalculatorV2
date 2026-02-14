@@ -17,25 +17,4 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.toggle('sidebar-collapsed');
         localStorage.setItem(storageKey, sidebar.classList.contains('collapsed'));
     });
-
-    // Highlight active nav link based on current URL
-    const currentPath = window.location.pathname.toLowerCase();
-    const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
-
-    navLinks.forEach(function (link) {
-        const href = link.getAttribute('href');
-        if (href && currentPath.startsWith(href.toLowerCase())) {
-            link.classList.add('active');
-        }
-    });
-
-    // If on root path, highlight Dashboard
-    if (currentPath === '/' || currentPath === '') {
-        const dashboardLink = document.querySelector('a[href="/"]') ||
-            document.querySelector('a[href="/Home"]') ||
-            document.querySelector('a[href="/Home/Index"]');
-        if (dashboardLink) {
-            dashboardLink.classList.add('active');
-        }
-    }
 });
