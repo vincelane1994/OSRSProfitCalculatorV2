@@ -220,6 +220,27 @@ public class OsrsWikiApiClientTests
     }
 
     [Fact]
+    public async Task GetTimeWindowPricesAsync_VolumeExceedsIntMax_CapsToIntMax()
+    {
+        var largeVolume = (long)int.MaxValue + 1000;
+        var json = $$"""
+        {
+            "data": {
+                "1": { "avgHighPrice": 100, "highPriceVolume": {{largeVolume}}, "avgLowPrice": 95, "lowPriceVolume": {{largeVolume}} }
+            },
+            "timestamp": 1707000000
+        }
+        """;
+
+        var client = CreateClient(new FakeHttpHandler(json));
+        var result = await client.GetTimeWindowPricesAsync(TimeWindow.FiveMinute);
+
+        Assert.Single(result);
+        Assert.Equal(int.MaxValue, result[1].BuyVolume);
+        Assert.Equal(int.MaxValue, result[1].SellVolume);
+    }
+
+    [Fact]
     public async Task GetTimeWindowPricesAsync_NonNumericItemId_SkipsItem()
     {
         var json = """
