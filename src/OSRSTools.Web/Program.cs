@@ -38,6 +38,8 @@ builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 // per request scope — critical because _highAlchValues is populated in one
 // call path and read from another.
 builder.Services.AddHttpClient<OsrsWikiApiClient>()
+    // Retry: 3 attempts with exponential backoff (2s, 4s, 8s).
+    // Starts at 2s intentionally to avoid hammering the Wiki API on transient blips.
     .AddPolicyHandler((services, _) =>
         HttpPolicyExtensions.HandleTransientHttpError()
             .WaitAndRetryAsync(3,
@@ -47,7 +49,7 @@ builder.Services.AddHttpClient<OsrsWikiApiClient>()
                     var logger = services.GetRequiredService<ILoggerFactory>()
                         .CreateLogger("PollyHttpRetry");
                     logger.LogWarning(
-                        "Retry {Attempt} after {Delay}s due to {StatusCode}",
+                        "Retry {Attempt} after {Delay}s due to {Reason}",
                         attempt, delay.TotalSeconds,
                         outcome.Result?.StatusCode.ToString() ?? outcome.Exception?.Message);
                 }))
