@@ -98,44 +98,55 @@ You are a senior full-stack developer with expertise in writing production-quali
 
 ## Task Execution Workflow (Loop)
 
+### Token Tracking
+Before starting any task, snapshot the current token count:
+```bash
+npx ccusage@latest blocks --json 2>/dev/null | jq '[.blocks[] | select(.isActive == true)] | .[0] | .totalTokens'
+```
+Record this as `tokens_start`. After the task is complete (PR created), run the same command and record `tokens_end`. The actual usage is `tokens_end - tokens_start`.
+
 ### Phase 1: Planning
 1. **Pick up** the next task from the Monday board
-2. **Read the implementation guide** from the task's comments/updates BEFORE writing any code
-3. Delegate to `planner-researcher` to create a plan with **token estimates** (low/high) in `./plans`
-4. Record the token estimates on the Monday task (`Token Est. Low` / `Token Est. High` columns)
+2. **Snapshot tokens** — run the ccusage command above and note `tokens_start`
+3. **Read the implementation guide** from the task's comments/updates BEFORE writing any code
+4. **Assess task complexity:**
+   - **Trivial tasks** (1-3 line changes, single-file config/CSS fixes): skip the `planner-researcher` — proceed directly to implementation. Apply the token estimation rules below manually.
+   - **All other tasks**: delegate to `planner-researcher` to create a plan with **token estimates** (low/high) in `./plans`
+5. Record the token estimates on the Monday task (`Token Est. Low` / `Token Est. High` columns)
 
 ### Phase 2: Implementation
-5. **Update Monday** task status to **In Progress**
-6. **Create a feature branch:** `feature/epic{N}-task{M}-{description}`
-7. **Follow the guide exactly** — ask the user for permission before deviating
-8. **Implement, build, test** — ensure 0 errors and all tests pass
+6. **Update Monday** task status to **In Progress**
+7. **Create a feature branch:** `feature/epic{N}-task{M}-{description}`
+8. **Follow the guide exactly** — ask the user for permission before deviating
+9. **Implement, build, test** — ensure 0 errors and all tests pass
 
 ### Phase 3: Validation
-9. Delegate to `tester` agent — all tests must pass
-10. Delegate to `code-reviewer` agent — no critical or high issues
-11. If either agent reports issues, **fix them** and re-validate (repeat steps 9-10)
+10. Delegate to `tester` agent — all tests must pass
+11. Delegate to `code-reviewer` agent — no critical or high issues
+12. If either agent reports issues, **fix them** and re-validate (repeat steps 10-11)
 
 ### Phase 4: PR & Review
-12. **Commit and push** the branch
-13. **Create a PR** with `MondayItem: <ITEM_ID>` in the body (required for GitHub Action sync)
-14. **Update Monday** task status to **Waiting for review**
+13. **Commit and push** the branch
+14. **Create a PR** with `MondayItem: <ITEM_ID>` in the body (required for GitHub Action sync)
+15. **Update Monday** task status to **Waiting for review**
 
 ### Phase 5: Feedback Loop
-15. If the user leaves PR comments requesting changes:
+16. If the user leaves PR comments requesting changes:
     - **Update Monday** task status to **Stuck**
     - Address the feedback, push fixes
     - **Update Monday** task status back to **Waiting for review**
-16. Repeat step 15 until all feedback is resolved
+17. Repeat step 16 until all feedback is resolved
 
 ### Phase 6: Completion
-17. Once the PR is merged, **update Monday** task to **Done**:
+18. **Snapshot tokens** — run the ccusage command and compute `tokens_end - tokens_start`
+19. Once the PR is merged, **update Monday** task to **Done**:
     - Set the **PR Link** column (`text_mm0gf50a`)
-    - Record **Actual Token Usage** (`numeric_mm0gwyt2`)
-18. **Begin the next task** (go to step 1)
+    - Record **Actual Token Usage** (`numeric_mm0gwyt2`) with the measured value from step 18
+20. **Begin the next task** (go to step 1)
 
 ### After an Epic
-19. After ALL tasks in the epic are complete, run a **Sprint Review**
-20. **Get user permission** before starting the next epic
+21. After ALL tasks in the epic are complete, run a **Sprint Review**
+22. **Get user permission** before starting the next epic
 
 ## Sprint Review (After Each Epic)
 
@@ -145,6 +156,27 @@ After completing all tasks in an epic:
 3. Identify patterns to improve future token estimates
 4. Document lessons learned
 5. Get user approval before moving to the next epic
+
+## Token Estimation Guidelines
+
+Estimates must account for the **full pipeline** (implementation + tester + reviewer), not just the code change.
+
+| Task Complexity | Min Estimate | Typical Range | Notes |
+|---|---|---|---|
+| Trivial (1-3 lines, single file) | 10,000 | 10,000 – 15,000 | Agent overhead dominates |
+| Small (single feature, few files) | 15,000 | 15,000 – 30,000 | |
+| Medium (multi-file, new tests) | 25,000 | 25,000 – 50,000 | |
+| Large (new service/feature, many tests) | 40,000 | 40,000 – 80,000 | |
+
+### Multipliers
+- **Reviewer feedback likely** (non-trivial logic, API changes, new patterns): multiply by **1.5x**
+- **Cross-cutting change** (touches multiple layers): multiply by **1.5x**
+- **New NuGet package or dependency**: multiply by **1.3x** (version compatibility risk)
+
+### Agent Overhead (fixed cost per task)
+- Tester agent: ~5,000 tokens per run
+- Code-reviewer agent: ~5,000 tokens per run
+- Each re-validation cycle (fix + re-test + re-review): ~12,000 tokens
 
 ---
 
