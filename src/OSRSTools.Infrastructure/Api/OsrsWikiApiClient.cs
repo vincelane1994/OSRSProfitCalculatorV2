@@ -58,10 +58,11 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
                 continue;
             }
 
-            if (dto.HighAlch.HasValue && dto.HighAlch.Value < 0)
+            int? highAlch = dto.HighAlch;
+            if (highAlch.HasValue && highAlch.Value < 0)
             {
-                _logger.LogWarning("Item {ItemId}: negative high alch value {Value}, treating as null", dto.Id, dto.HighAlch.Value);
-                dto.HighAlch = null;
+                _logger.LogWarning("Item {ItemId}: negative high alch value {Value}, treating as null", dto.Id, highAlch.Value);
+                highAlch = null;
             }
 
             mappings[dto.Id] = new ItemMapping
@@ -75,7 +76,7 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
             };
 
             // Store high alch values separately (not part of ItemMapping entity)
-            _highAlchValues[dto.Id] = dto.HighAlch;
+            _highAlchValues[dto.Id] = highAlch;
         }
 
         _logger.LogInformation("Fetched {Count} item mappings", mappings.Count);
@@ -165,7 +166,7 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
             if ((priceDto.AvgHighPrice.HasValue && priceDto.AvgHighPrice.Value < 0) ||
                 (priceDto.AvgLowPrice.HasValue && priceDto.AvgLowPrice.Value < 0))
             {
-                _logger.LogWarning("Skipping item {ItemId}: negative {Window} price (avgHigh={High}, avgLow={Low})", itemId, window, priceDto.AvgHighPrice, priceDto.AvgLowPrice);
+                _logger.LogWarning("Skipping item {ItemId}: negative {Window} price (avgHigh={AvgHigh}, avgLow={AvgLow})", itemId, window, priceDto.AvgHighPrice, priceDto.AvgLowPrice);
                 continue;
             }
 
