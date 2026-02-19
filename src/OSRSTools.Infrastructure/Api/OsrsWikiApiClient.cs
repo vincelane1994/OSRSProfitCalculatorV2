@@ -135,6 +135,11 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
         {
             if (!int.TryParse(itemIdStr, out var itemId)) continue;
 
+            if (priceDto.HighPriceVolume.HasValue && priceDto.HighPriceVolume.Value > int.MaxValue)
+                _logger.LogWarning("Item {ItemId}: HighPriceVolume {Volume} exceeds int.MaxValue, capping", itemId, priceDto.HighPriceVolume.Value);
+            if (priceDto.LowPriceVolume.HasValue && priceDto.LowPriceVolume.Value > int.MaxValue)
+                _logger.LogWarning("Item {ItemId}: LowPriceVolume {Volume} exceeds int.MaxValue, capping", itemId, priceDto.LowPriceVolume.Value);
+
             prices[itemId] = new TimeWindowPrice
             {
                 AvgBuyPrice = priceDto.AvgHighPrice,
