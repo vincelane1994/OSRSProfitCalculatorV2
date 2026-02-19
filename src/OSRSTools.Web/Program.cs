@@ -16,8 +16,6 @@ builder.Services.Configure<TaxSettings>(
     builder.Configuration.GetSection("Tax"));
 builder.Services.Configure<CacheSettings>(
     builder.Configuration.GetSection("Cache"));
-builder.Services.Configure<GoogleSheetsSettings>(
-    builder.Configuration.GetSection("GoogleSheets"));
 builder.Services.Configure<PriceWeightSettings>(
     builder.Configuration.GetSection("PriceWeights"));
 
