@@ -95,6 +95,34 @@ public class OsrsWikiApiClientTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public async Task GetAllMappingsAsync_EmptyName_SkipsItem()
+    {
+        var json = JsonSerializer.Serialize(new[]
+        {
+            new { id = 1, name = "", members = false, limit = 100, highalch = 50 },
+            new { id = 2, name = "Valid Item", members = false, limit = 200, highalch = 100 }
+        });
+
+        var client = CreateClient(new FakeHttpHandler(json));
+        var result = await client.GetAllMappingsAsync();
+
+        Assert.Single(result);
+        Assert.True(result.ContainsKey(2));
+        Assert.False(result.ContainsKey(1));
+    }
+
+    [Fact]
+    public async Task GetAllMappingsAsync_NegativeHighAlch_TreatedAsNull()
+    {
+        var json = "[{\"id\":1,\"name\":\"Test\",\"members\":false,\"limit\":100,\"highalch\":-5}]";
+
+        var client = CreateClient(new FakeHttpHandler(json));
+        await client.GetAllMappingsAsync();
+
+        Assert.Null(client.GetHighAlchValue(1));
+    }
+
     #endregion
 
     #region GetLatestPricesAsync
@@ -154,6 +182,45 @@ public class OsrsWikiApiClientTests
         var result = await client.GetLatestPricesAsync();
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task GetLatestPricesAsync_NonNumericItemId_SkipsItem()
+    {
+        var json = """
+        {
+            "data": {
+                "abc": { "high": 100, "highTime": 1707000000, "low": 95, "lowTime": 1707000001 },
+                "2": { "high": 150, "highTime": 1707000000, "low": 145, "lowTime": 1707000001 }
+            }
+        }
+        """;
+
+        var client = CreateClient(new FakeHttpHandler(json));
+        var result = await client.GetLatestPricesAsync();
+
+        Assert.Single(result);
+        Assert.True(result.ContainsKey(2));
+    }
+
+    [Fact]
+    public async Task GetLatestPricesAsync_NegativePrice_SkipsItem()
+    {
+        var json = """
+        {
+            "data": {
+                "1": { "high": -100, "highTime": 1707000000, "low": 95, "lowTime": 1707000001 },
+                "2": { "high": 150, "highTime": 1707000000, "low": 145, "lowTime": 1707000001 }
+            }
+        }
+        """;
+
+        var client = CreateClient(new FakeHttpHandler(json));
+        var result = await client.GetLatestPricesAsync();
+
+        Assert.Single(result);
+        Assert.True(result.ContainsKey(2));
+        Assert.False(result.ContainsKey(1));
     }
 
     #endregion
@@ -238,6 +305,48 @@ public class OsrsWikiApiClientTests
         Assert.Single(result);
         Assert.Equal(int.MaxValue, result[1].BuyVolume);
         Assert.Equal(int.MaxValue, result[1].SellVolume);
+    }
+
+    [Fact]
+    public async Task GetTimeWindowPricesAsync_NegativePrice_SkipsItem()
+    {
+        var json = """
+        {
+            "data": {
+                "1": { "avgHighPrice": -100, "highPriceVolume": 1000, "avgLowPrice": 95, "lowPriceVolume": 900 },
+                "2": { "avgHighPrice": 200, "highPriceVolume": 2000, "avgLowPrice": 195, "lowPriceVolume": 1900 }
+            },
+            "timestamp": 1707000000
+        }
+        """;
+
+        var client = CreateClient(new FakeHttpHandler(json));
+        var result = await client.GetTimeWindowPricesAsync(TimeWindow.FiveMinute);
+
+        Assert.Single(result);
+        Assert.True(result.ContainsKey(2));
+        Assert.False(result.ContainsKey(1));
+    }
+
+    [Fact]
+    public async Task GetTimeWindowPricesAsync_NegativeVolume_SkipsItem()
+    {
+        var json = """
+        {
+            "data": {
+                "1": { "avgHighPrice": 100, "highPriceVolume": -500, "avgLowPrice": 95, "lowPriceVolume": 900 },
+                "2": { "avgHighPrice": 200, "highPriceVolume": 2000, "avgLowPrice": 195, "lowPriceVolume": 1900 }
+            },
+            "timestamp": 1707000000
+        }
+        """;
+
+        var client = CreateClient(new FakeHttpHandler(json));
+        var result = await client.GetTimeWindowPricesAsync(TimeWindow.FiveMinute);
+
+        Assert.Single(result);
+        Assert.True(result.ContainsKey(2));
+        Assert.False(result.ContainsKey(1));
     }
 
     [Fact]

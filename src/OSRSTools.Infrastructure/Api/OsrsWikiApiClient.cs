@@ -52,6 +52,18 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
 
         foreach (var dto in dtos)
         {
+            if (string.IsNullOrWhiteSpace(dto.Name))
+            {
+                _logger.LogWarning("Skipping item {ItemId}: empty or null name", dto.Id);
+                continue;
+            }
+
+            if (dto.HighAlch.HasValue && dto.HighAlch.Value < 0)
+            {
+                _logger.LogWarning("Item {ItemId}: negative high alch value {Value}, treating as null", dto.Id, dto.HighAlch.Value);
+                dto.HighAlch = null;
+            }
+
             mappings[dto.Id] = new ItemMapping
             {
                 ItemId = dto.Id,
@@ -94,7 +106,18 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
 
         foreach (var (itemIdStr, priceDto) in dto.Data)
         {
-            if (!int.TryParse(itemIdStr, out var itemId)) continue;
+            if (!int.TryParse(itemIdStr, out var itemId))
+            {
+                _logger.LogWarning("Skipping latest price entry with non-numeric item ID: {ItemId}", itemIdStr);
+                continue;
+            }
+
+            if ((priceDto.High.HasValue && priceDto.High.Value < 0) ||
+                (priceDto.Low.HasValue && priceDto.Low.Value < 0))
+            {
+                _logger.LogWarning("Skipping item {ItemId}: negative price (high={High}, low={Low})", itemId, priceDto.High, priceDto.Low);
+                continue;
+            }
 
             prices[itemId] = new ItemPriceData
             {
@@ -133,7 +156,25 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
 
         foreach (var (itemIdStr, priceDto) in dto.Data)
         {
-            if (!int.TryParse(itemIdStr, out var itemId)) continue;
+            if (!int.TryParse(itemIdStr, out var itemId))
+            {
+                _logger.LogWarning("Skipping {Window} price entry with non-numeric item ID: {ItemId}", window, itemIdStr);
+                continue;
+            }
+
+            if ((priceDto.AvgHighPrice.HasValue && priceDto.AvgHighPrice.Value < 0) ||
+                (priceDto.AvgLowPrice.HasValue && priceDto.AvgLowPrice.Value < 0))
+            {
+                _logger.LogWarning("Skipping item {ItemId}: negative {Window} price (avgHigh={High}, avgLow={Low})", itemId, window, priceDto.AvgHighPrice, priceDto.AvgLowPrice);
+                continue;
+            }
+
+            if ((priceDto.HighPriceVolume.HasValue && priceDto.HighPriceVolume.Value < 0) ||
+                (priceDto.LowPriceVolume.HasValue && priceDto.LowPriceVolume.Value < 0))
+            {
+                _logger.LogWarning("Skipping item {ItemId}: negative {Window} volume (highVol={HighVol}, lowVol={LowVol})", itemId, window, priceDto.HighPriceVolume, priceDto.LowPriceVolume);
+                continue;
+            }
 
             if (priceDto.HighPriceVolume.HasValue && priceDto.HighPriceVolume.Value > int.MaxValue)
                 _logger.LogWarning("Item {ItemId}: HighPriceVolume {Volume} exceeds int.MaxValue, capping", itemId, priceDto.HighPriceVolume.Value);
