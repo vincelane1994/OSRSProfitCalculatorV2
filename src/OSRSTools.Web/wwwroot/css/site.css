@@ -14,6 +14,9 @@
     --content-bg: #121418;
     --card-bg: #1e2128;
     --card-border: #2e3138;
+    --profit-positive: #4ade80;
+    --profit-negative: #f87171;
+    --accent-focus-shadow: rgba(245, 166, 35, 0.2);
     --transition-speed: 0.25s;
 }
 
@@ -295,8 +298,8 @@ body.sidebar-collapsed .main-content {
 }
 
 /* ===== Profit/Loss Colors ===== */
-.profit-positive { color: #4ade80; }
-.profit-negative { color: #f87171; }
+.profit-positive { color: var(--profit-positive); }
+.profit-negative { color: var(--profit-negative); }
 .profit-neutral { color: var(--text-secondary); }
 
 /* ===== Responsive ===== */
@@ -376,7 +379,7 @@ body.sidebar-collapsed .main-content {
 .filter-panel select:focus {
     border-color: var(--accent);
     outline: none;
-    box-shadow: 0 0 0 2px rgba(245, 166, 35, 0.2);
+    box-shadow: 0 0 0 2px var(--accent-focus-shadow);
 }
 
 /* ── Dashboard Carousel ───────────────────────── */
