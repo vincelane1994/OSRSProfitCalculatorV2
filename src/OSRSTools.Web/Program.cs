@@ -18,6 +18,8 @@ builder.Services.Configure<CacheSettings>(
     builder.Configuration.GetSection("Cache"));
 builder.Services.Configure<PriceWeightSettings>(
     builder.Configuration.GetSection("PriceWeights"));
+builder.Services.Configure<ScoringConfiguration>(
+    builder.Configuration.GetSection("Scoring"));
 
 // Core services
 builder.Services.AddControllersWithViews();
@@ -29,6 +31,7 @@ builder.Services.AddScoped<IPriceRecommendationService, PriceRecommendationServi
 builder.Services.AddScoped<IFlipCalculator, FlipCalculator>();
 builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 builder.Services.AddScoped<IManipulationDetector, ManipulationDetector>();
+builder.Services.AddScoped<IScoringService, ScoringService>();
 
 // Infrastructure — API client
 // AddHttpClient registers OsrsWikiApiClient as transient by default.
