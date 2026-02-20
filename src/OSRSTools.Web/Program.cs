@@ -31,8 +31,9 @@ builder.Services.AddScoped<IPriceRecommendationService, PriceRecommendationServi
 builder.Services.AddScoped<IFlipCalculator, FlipCalculator>();
 builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 builder.Services.AddScoped<IManipulationDetector, ManipulationDetector>();
-builder.Services.AddScoped<IScoringService, ScoringService>();
 builder.Services.AddScoped<IFlipAnalyzer, FlipAnalyzer>();
+builder.Services.AddScoped<IScoringService, ScoringService>();
+
 
 // Infrastructure — API client
 // AddHttpClient registers OsrsWikiApiClient as transient by default.
