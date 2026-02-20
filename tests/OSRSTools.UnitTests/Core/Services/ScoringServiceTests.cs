@@ -192,5 +192,77 @@ public class ScoringServiceTests
         Assert.True(result < 1.0);
     }
 
+    [Fact]
+    public void CalculateFlipScore_LowConfidence_ReducesScore()
+    {
+        var highConfCandidate = new FlipCandidate
+        {
+            Volume24Hr = 100000, Margin = 500, RoiPercent = 5.0, GpPerHour = 500000,
+            HasSufficientData = true, ProfitPerUnit = 100
+        };
+        var lowConfCandidate = new FlipCandidate
+        {
+            Volume24Hr = 2000, Margin = 500, RoiPercent = 5.0, GpPerHour = 500000,
+            HasSufficientData = false, ProfitPerUnit = 100
+        };
+
+        var highScore = _sut.CalculateFlipScore(highConfCandidate);
+        var lowScore = _sut.CalculateFlipScore(lowConfCandidate);
+
+        Assert.True(highScore > lowScore);
+    }
+
+    [Fact]
+    public void CalculateFlipScore_MaxSubScores_ReturnsNearTen()
+    {
+        var candidate = new FlipCandidate
+        {
+            Volume24Hr = 200000, Margin = 5000, RoiPercent = 15.0,
+            GpPerHour = 1_000_000, HasSufficientData = true, ProfitPerUnit = 1000
+        };
+
+        var result = _sut.CalculateFlipScore(candidate);
+
+        Assert.True(result > 5.0);
+        Assert.True(result <= 10.0);
+    }
+
+    #endregion
+
+    #region Score Methods — Edge Cases
+
+    [Fact]
+    public void ScoreVolume_ZeroVolume_ReturnsMinBreakpointScore()
+    {
+        var result = _sut.ScoreVolume(0);
+        Assert.Equal(0.1, result);
+    }
+
+    [Fact]
+    public void ScoreMargin_NegativeMargin_ReturnsMinBreakpointScore()
+    {
+        var result = _sut.ScoreMargin(-10);
+        Assert.Equal(0.05, result);
+    }
+
+    [Fact]
+    public void CalculateConfidence_ExcessiveWindows_CappedAtOne()
+    {
+        // windows: min(10/3, 1) * 0.6 = 1.0 * 0.6 = 0.6
+        // volume: min(200000/50000, 1) * 0.4 = 1.0 * 0.4 = 0.4
+        // total: 1.0 (capped)
+        var result = _sut.CalculateConfidence(10, 200000);
+        Assert.Equal(1.0, result);
+    }
+
+    [Fact]
+    public void CalculateConfidence_ZeroWindows_HighVolume_ReturnsVolumeComponentOnly()
+    {
+        // windows: 0 * 0.6 = 0
+        // volume: min(100000/50000, 1) * 0.4 = 1.0 * 0.4 = 0.4
+        var result = _sut.CalculateConfidence(0, 100000);
+        Assert.Equal(0.4, result);
+    }
+
     #endregion
 }
