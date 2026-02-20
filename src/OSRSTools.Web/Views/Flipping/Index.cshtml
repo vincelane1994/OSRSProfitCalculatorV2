@@ -1,0 +1,103 @@
+@model OSRSTools.Web.ViewModels.FlippingViewModel
+
+@{
+    ViewData["Title"] = "Flipping";
+}
+
+<h4 class="mb-4"><i class="bi bi-arrow-left-right me-2"></i>Flipping Calculator</h4>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+    </div>
+}
+
+<!-- Summary Cards -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Total Candidates</div>
+            <div class="stat-value" id="totalItemsDisplay">@Model.TotalItems</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Avg Confidence</div>
+            <div class="stat-value">@Model.AverageConfidence</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Showing</div>
+            <div class="stat-value" id="showingCount">@Model.TotalItems</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-2">
+            <label for="filterMembers">Members</label>
+            <select id="filterMembers" class="form-select form-select-sm" onchange="applyFilters()">
+                <option value="all">All</option>
+                <option value="members">Members Only</option>
+                <option value="f2p">F2P Only</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="filterMinMargin">Min Margin</label>
+            <input type="number" id="filterMinMargin" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-2">
+            <label for="filterMinVolume">Min Volume</label>
+            <input type="number" id="filterMinVolume" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-2">
+            <label for="filterMinGpHr">Min GP/hr</label>
+            <input type="number" id="filterMinGpHr" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-2">
+            <label for="filterMinConfidence">Min Confidence</label>
+            <input type="number" id="filterMinConfidence" class="form-control form-control-sm" step="0.1" min="0" max="1" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-sm btn-outline-warning w-100" onclick="resetFilters()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Data Table -->
+<div class="dashboard-card p-0" style="overflow-x: auto;">
+    <table class="data-table" id="flipTable">
+        <thead>
+            <tr>
+                <th onclick="sortTable('name')">Name <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('recommendedBuyPrice')">Buy <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('recommendedSellPrice')">Sell <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('margin')">Margin <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('taxAmount')">Tax <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('profitPerUnit')">Profit/Unit <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('quantity')">Qty <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('totalProfit')">Total Profit <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('roiPercent')">ROI% <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('gpPerHour')">GP/hr <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('confidenceRating')">Confidence <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('flipScore')">Score <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('volume24Hr')">Volume <i class="bi bi-chevron-expand"></i></th>
+            </tr>
+        </thead>
+        <tbody id="flipTableBody">
+        </tbody>
+    </table>
+</div>
+
+@section Scripts {
+    <script>
+        var items = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Items, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    </script>
+    <script src="~/js/flipping-filter.js"></script>
+}
