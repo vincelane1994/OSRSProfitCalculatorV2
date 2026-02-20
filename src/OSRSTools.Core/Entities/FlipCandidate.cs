@@ -52,10 +52,10 @@ public class FlipCandidate
     public int Volume24Hr { get; init; }
 
     /// <summary>Confidence rating from 0.0 (low) to 1.0 (high) based on data availability.</summary>
-    public double ConfidenceRating { get; init; }
+    public double ConfidenceRating { get; set; }
 
     /// <summary>Composite flip score combining volume, margin, ROI, and GP/hr sub-scores.</summary>
-    public double FlipScore { get; init; }
+    public double FlipScore { get; set; }
 
     /// <summary>Whether enough time window data exists for a reliable recommendation.</summary>
     public bool HasSufficientData { get; init; }
