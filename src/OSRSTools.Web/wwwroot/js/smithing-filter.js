@@ -76,10 +76,10 @@ function resetFilters() {
     document.getElementById('filterMinProfit').value  = '';
     document.getElementById('filterMinVolume').value  = '';
     document.getElementById('filterProfitable').value = 'all';
-    applyFilters('cannonballs');
-    applyFilters('dartTips');
-    // Reset showing count to match whichever tab is active.
-    applyFilters(getActiveTab());
+    // Render both tabs; applyFilters updates showingCount only for the active one.
+    var active = getActiveTab();
+    applyFilters(active === 'cannonballs' ? 'dartTips' : 'cannonballs');
+    applyFilters(active);
 }
 
 function renderTable(bodyId, data) {
