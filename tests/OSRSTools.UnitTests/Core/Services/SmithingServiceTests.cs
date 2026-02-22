@@ -142,6 +142,25 @@ public class SmithingServiceTests
     }
 
     [Fact]
+    public async Task GetCannonballProfitsAsync_MissingOutputPriceData_Excluded()
+    {
+        // Arrange — bar price exists but cannonball price entry is absent
+        var prices = CreatePrices(
+            (SteelBarId, buyPrice: 1200, sellPrice: 1210, volume: 5000));
+
+        SetupPriceData(prices);
+
+        // Act
+        var result = await _sut.GetCannonballProfitsAsync();
+
+        // Assert
+        Assert.Empty(result);
+        _profitCalcMock.Verify(
+            x => x.CalculateMultiOutputProfit(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Never);
+    }
+
+    [Fact]
     public async Task GetCannonballProfitsAsync_MembersFlag_IsTrue()
     {
         // Arrange — cannonball smithing requires Dwarf Cannon (members quest)
@@ -264,6 +283,10 @@ public class SmithingServiceTests
         // Assert — 5 results, bronze dart tip excluded
         Assert.Equal(5, result.Count);
         Assert.DoesNotContain(result, x => x.BarId == BronzeBarId);
+        // Zero-volume guard runs before profit calc — only 5 of 6 recipes reach it
+        _profitCalcMock.Verify(
+            x => x.CalculateMultiOutputProfit(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>()),
+            Times.Exactly(5));
     }
 
     [Fact]
