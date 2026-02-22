@@ -14,12 +14,12 @@ public interface ISmithingService
     /// Cannonballs are produced from steel bars only (4 cannonballs per bar).
     /// Returns items sorted by ProfitPerUnit descending, excluding zero-volume outputs.
     /// </summary>
-    Task<IEnumerable<SmithingItem>> GetCannonballProfitsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SmithingItem>> GetCannonballProfitsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Calculates dart tip smithing profitability for all 6 bar types.
     /// All dart tip smithing is members-only and requires The Tourist Trap quest (10 tips per bar).
     /// Returns items sorted by ProfitPerUnit descending, excluding zero-volume outputs.
     /// </summary>
-    Task<IEnumerable<SmithingItem>> GetDartTipProfitsAsync(CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<SmithingItem>> GetDartTipProfitsAsync(CancellationToken cancellationToken = default);
 }

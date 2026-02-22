@@ -15,7 +15,7 @@ public class SmithingService : ISmithingService
     private static readonly SmithingRecipe[] CannonballRecipes =
     [
         new(OutputItemId: 2, OutputName: "Cannonball", BarId: 2353, BarName: "Steel bar",
-            OutputPerInput: 4, Members: false, Type: SmithingType.Cannonball)
+            OutputPerInput: 4, Members: true, Type: SmithingType.Cannonball)
     ];
 
     // Dart tips: all 6 bar types, all members-only, 10 tips per bar.
@@ -52,14 +52,14 @@ public class SmithingService : ISmithingService
         _logger = logger;
     }
 
-    public async Task<IEnumerable<SmithingItem>> GetCannonballProfitsAsync(
+    public async Task<IReadOnlyList<SmithingItem>> GetCannonballProfitsAsync(
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Calculating cannonball smithing profitability...");
         return await CalculateSmithingProfitsAsync(CannonballRecipes, cancellationToken);
     }
 
-    public async Task<IEnumerable<SmithingItem>> GetDartTipProfitsAsync(
+    public async Task<IReadOnlyList<SmithingItem>> GetDartTipProfitsAsync(
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Calculating dart tip smithing profitability...");
@@ -68,7 +68,7 @@ public class SmithingService : ISmithingService
 
     #region Private Helpers
 
-    private async Task<IEnumerable<SmithingItem>> CalculateSmithingProfitsAsync(
+    private async Task<IReadOnlyList<SmithingItem>> CalculateSmithingProfitsAsync(
         IEnumerable<SmithingRecipe> recipes,
         CancellationToken cancellationToken)
     {
