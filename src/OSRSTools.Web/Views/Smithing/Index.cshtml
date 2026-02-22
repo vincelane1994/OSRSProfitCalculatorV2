@@ -1,0 +1,134 @@
+@model OSRSTools.Web.ViewModels.SmithingViewModel
+
+@{
+    ViewData["Title"] = "Smithing";
+}
+
+<h4 class="mb-4"><i class="bi bi-hammer me-2"></i>Smithing Calculator</h4>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+    </div>
+}
+
+<!-- Summary Cards -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Cannonballs</div>
+            <div class="stat-value">@Model.TotalCannonballs <small class="text-muted fs-6">(@Model.ProfitableCannonballs profitable)</small></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Dart Tips</div>
+            <div class="stat-value">@Model.TotalDartTips <small class="text-muted fs-6">(@Model.ProfitableDartTips profitable)</small></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Showing</div>
+            <div class="stat-value" id="showingCount">@Model.TotalCannonballs</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="filterMinProfit">Min Profit (per bar)</label>
+            <input type="number" id="filterMinProfit" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-3">
+            <label for="filterMinVolume">Min Volume</label>
+            <input type="number" id="filterMinVolume" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-3">
+            <label for="filterProfitable">Profitability</label>
+            <select id="filterProfitable" class="form-select form-select-sm" onchange="applyFilters()">
+                <option value="all">All</option>
+                <option value="profitable">Profitable Only</option>
+                <option value="unprofitable">Unprofitable Only</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-sm btn-outline-warning w-100" onclick="resetFilters()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-0" id="smithingTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="cannonballs-tab-btn" data-bs-toggle="tab"
+                data-bs-target="#cannonballs-pane" data-tab="cannonballs"
+                type="button" role="tab">
+            <i class="bi bi-bullseye me-1"></i>Cannonballs
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="dart-tips-tab-btn" data-bs-toggle="tab"
+                data-bs-target="#dart-tips-pane" data-tab="dartTips"
+                type="button" role="tab">
+            <i class="bi bi-arrow-up me-1"></i>Dart Tips
+            <span class="badge bg-secondary ms-1" title="Members only"><i class="bi bi-star-fill" style="font-size:0.6rem"></i></span>
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Cannonballs Tab -->
+    <div class="tab-pane fade show active" id="cannonballs-pane" role="tabpanel">
+        <div class="dashboard-card p-0" style="overflow-x: auto;">
+            <table class="data-table" id="cannonballsTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('barName')">Bar <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('name')">Output <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('outputPerInput')">Per Bar <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('barPrice')">Bar Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('outputPrice')">Output Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('profitPerUnit')">Profit <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('roiPercent')">ROI% <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('volume24Hr')">Volume 24h <i class="bi bi-chevron-expand"></i></th>
+                    </tr>
+                </thead>
+                <tbody id="cannonballsBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Dart Tips Tab -->
+    <div class="tab-pane fade" id="dart-tips-pane" role="tabpanel">
+        <div class="dashboard-card p-0" style="overflow-x: auto;">
+            <table class="data-table" id="dartTipsTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('barName')">Bar <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('name')">Output <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('outputPerInput')">Per Bar <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('barPrice')">Bar Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('outputPrice')">Output Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('profitPerUnit')">Profit <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('roiPercent')">ROI% <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('volume24Hr')">Volume 24h <i class="bi bi-chevron-expand"></i></th>
+                    </tr>
+                </thead>
+                <tbody id="dartTipsBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var cannonballs = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Cannonballs, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+        var dartTips = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DartTips, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    </script>
+    <script src="~/js/smithing-filter.js"></script>
+}
