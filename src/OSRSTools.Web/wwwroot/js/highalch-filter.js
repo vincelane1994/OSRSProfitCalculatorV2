@@ -56,7 +56,7 @@ function resetFilters() {
     document.getElementById('filterMembers').value = 'all';
     document.getElementById('filterMinProfit').value = '100';
     document.getElementById('filterMaxBuyPrice').value = '';
-    document.getElementById('filterMinVolume').value = '';
+    document.getElementById('filterMinVolume').value = '10000';
     document.getElementById('filterMaxInvestment').value = '1000000';
     applyFilters();
 }
@@ -77,6 +77,7 @@ function renderTable(data) {
         html += '<td class="' + profitClass + '">' + formatGp(item.profit) + '</td>';
         html += '<td class="' + profitClass + '">' + item.roiPercent.toFixed(2) + '%</td>';
         html += '<td>' + formatNumber(item.volume24Hr) + '</td>';
+        html += '<td>' + formatNumber(item.buyLimit) + '</td>';
         html += '</tr>';
     }
 
