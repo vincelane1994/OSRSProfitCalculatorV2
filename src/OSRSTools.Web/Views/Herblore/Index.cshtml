@@ -1,0 +1,159 @@
+@model OSRSTools.Web.ViewModels.HerbloreViewModel
+
+@{
+    ViewData["Title"] = "Herblore";
+}
+
+<h4 class="mb-4"><i class="bi bi-flower1 me-2"></i>Herblore Calculator</h4>
+
+@if (!string.IsNullOrEmpty(Model.ErrorMessage))
+{
+    <div class="alert alert-danger" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>@Model.ErrorMessage
+    </div>
+}
+
+<!-- Summary Cards -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Cleaning</div>
+            <div class="stat-value">@Model.TotalCleaning <small class="text-muted fs-6">(@Model.ProfitableCleaning profitable)</small></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Full Process</div>
+            <div class="stat-value">@Model.TotalFullProcess <small class="text-muted fs-6">(@Model.ProfitableFullProcess profitable)</small></div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="dashboard-card">
+            <div class="stat-label">Potion Making</div>
+            <div class="stat-value">@Model.TotalPotionMaking <small class="text-muted fs-6">(@Model.ProfitablePotionMaking profitable)</small></div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Panel -->
+<div class="filter-panel">
+    <div class="row g-3 align-items-end">
+        <div class="col-md-3">
+            <label for="filterMinProfit">Min Profit (per herb)</label>
+            <input type="number" id="filterMinProfit" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-3">
+            <label for="filterMinVolume">Min Volume</label>
+            <input type="number" id="filterMinVolume" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
+        </div>
+        <div class="col-md-3">
+            <label for="filterProfitable">Profitability</label>
+            <select id="filterProfitable" class="form-select form-select-sm" onchange="applyFilters()">
+                <option value="all">All</option>
+                <option value="profitable">Profitable Only</option>
+                <option value="unprofitable">Unprofitable Only</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-sm btn-outline-warning w-100" onclick="resetFilters()">
+                <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<ul class="nav nav-tabs mb-0" id="herbloreTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="cleaning-tab-btn" data-bs-toggle="tab"
+                data-bs-target="#cleaning-pane" data-tab="cleaning"
+                type="button" role="tab">
+            <i class="bi bi-stars me-1"></i>Cleaning
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="fullprocess-tab-btn" data-bs-toggle="tab"
+                data-bs-target="#fullprocess-pane" data-tab="fullProcess"
+                type="button" role="tab">
+            <i class="bi bi-arrow-right me-1"></i>Full Process
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="potionmaking-tab-btn" data-bs-toggle="tab"
+                data-bs-target="#potionmaking-pane" data-tab="potionMaking"
+                type="button" role="tab">
+            <i class="bi bi-cup-hot me-1"></i>Potion Making
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content">
+    <!-- Cleaning Tab -->
+    <div class="tab-pane fade show active" id="cleaning-pane" role="tabpanel">
+        <div class="dashboard-card p-0" style="overflow-x: auto;">
+            <table class="data-table" id="cleaningTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('herbName')">Herb <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('herbPrice')">Grimy Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('outputPrice')">Clean Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('profitPerUnit')">Profit <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('roiPercent')">ROI% <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('volume24Hr')">Volume 24h <i class="bi bi-chevron-expand"></i></th>
+                    </tr>
+                </thead>
+                <tbody id="cleaningBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Full Process Tab -->
+    <div class="tab-pane fade" id="fullprocess-pane" role="tabpanel">
+        <div class="dashboard-card p-0" style="overflow-x: auto;">
+            <table class="data-table" id="fullProcessTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('herbName')">Herb <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('herbPrice')">Grimy Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('secondaryPrice')">Vial Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('outputPrice')">Unf. Potion Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('profitPerUnit')">Profit <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('roiPercent')">ROI% <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('volume24Hr')">Volume 24h <i class="bi bi-chevron-expand"></i></th>
+                    </tr>
+                </thead>
+                <tbody id="fullProcessBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Potion Making Tab -->
+    <div class="tab-pane fade" id="potionmaking-pane" role="tabpanel">
+        <div class="dashboard-card p-0" style="overflow-x: auto;">
+            <table class="data-table" id="potionMakingTable">
+                <thead>
+                    <tr>
+                        <th onclick="sortTable('herbName')">Herb <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('name')">Potion <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('herbPrice')">Clean Herb Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('secondaryPrice')">Secondary Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('outputPrice')">Potion Price <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('profitPerUnit')">Profit <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('roiPercent')">ROI% <i class="bi bi-chevron-expand"></i></th>
+                        <th onclick="sortTable('volume24Hr')">Volume 24h <i class="bi bi-chevron-expand"></i></th>
+                    </tr>
+                </thead>
+                <tbody id="potionMakingBody"></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        var cleaningItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.CleaningItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+        var fullProcessItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.FullProcessItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+        var potionMakingItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PotionMakingItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+    </script>
+    <script src="~/js/herblore-filter.js"></script>
+}

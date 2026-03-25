@@ -31,6 +31,7 @@ builder.Services.AddScoped<IPriceRecommendationService, PriceRecommendationServi
 builder.Services.AddScoped<IFlipCalculator, FlipCalculator>();
 builder.Services.AddScoped<IHighAlchingService, HighAlchingService>();
 builder.Services.AddScoped<ISmithingService, SmithingService>();
+builder.Services.AddScoped<IHerbloreService, HerbloreService>();
 builder.Services.AddScoped<IManipulationDetector, ManipulationDetector>();
 builder.Services.AddScoped<IFlipAnalyzer, FlipAnalyzer>();
 builder.Services.AddScoped<IScoringService, ScoringService>();
