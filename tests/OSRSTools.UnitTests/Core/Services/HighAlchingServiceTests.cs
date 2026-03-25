@@ -12,6 +12,7 @@ public class HighAlchingServiceTests
     private readonly Mock<IDataFetchService> _dataFetchMock = new();
     private readonly Mock<IProfitCalculationService> _profitCalcMock = new();
     private readonly Mock<IPriceRecommendationService> _priceRecommendationMock = new();
+    private readonly Mock<IManipulationDetector> _manipulationDetectorMock = new();
     private readonly Mock<ILogger<HighAlchingService>> _loggerMock = new();
     private readonly HighAlchingService _sut;
 
@@ -19,10 +20,16 @@ public class HighAlchingServiceTests
 
     public HighAlchingServiceTests()
     {
+        // Default: no items are suspicious
+        _manipulationDetectorMock
+            .Setup(x => x.IsSuspicious(It.IsAny<ItemPriceData>(), It.IsAny<double>()))
+            .Returns(false);
+
         _sut = new HighAlchingService(
             _dataFetchMock.Object,
             _profitCalcMock.Object,
             _priceRecommendationMock.Object,
+            _manipulationDetectorMock.Object,
             _loggerMock.Object);
     }
 
@@ -197,6 +204,32 @@ public class HighAlchingServiceTests
         Assert.Equal(2, result.Count);
         Assert.Contains(result, x => x.Members);
         Assert.Contains(result, x => !x.Members);
+    }
+
+    [Fact]
+    public async Task GetProfitableItemsAsync_SuspiciousPrice_IsExcluded()
+    {
+        // Arrange
+        var mappings = CreateMappings(
+            (1, "Manipulated Item", 100, false));
+
+        var prices = CreatePrices(
+            (1, 500, 1000),
+            (NatureRuneId, 120, 50000));
+
+        SetupMocks(mappings, prices, highAlchValues: new Dictionary<int, int?> { [1] = 900 });
+        SetupNatureRunePrice(prices, buyPrice: 120);
+        SetupRecommendedPrice(1, buyPrice: 500);
+
+        _manipulationDetectorMock
+            .Setup(x => x.IsSuspicious(It.Is<ItemPriceData>(p => p.ItemId == 1), 50.0))
+            .Returns(true);
+
+        // Act
+        var result = await _sut.GetProfitableItemsAsync();
+
+        // Assert
+        Assert.Empty(result);
     }
 
     [Fact]

@@ -16,17 +16,20 @@ public class HighAlchingService : IHighAlchingService
     private readonly IDataFetchService _dataFetchService;
     private readonly IProfitCalculationService _profitCalcService;
     private readonly IPriceRecommendationService _priceRecommendationService;
+    private readonly IManipulationDetector _manipulationDetector;
     private readonly ILogger<HighAlchingService> _logger;
 
     public HighAlchingService(
         IDataFetchService dataFetchService,
         IProfitCalculationService profitCalcService,
         IPriceRecommendationService priceRecommendationService,
+        IManipulationDetector manipulationDetector,
         ILogger<HighAlchingService> logger)
     {
         _dataFetchService = dataFetchService;
         _profitCalcService = profitCalcService;
         _priceRecommendationService = priceRecommendationService;
+        _manipulationDetector = manipulationDetector;
         _logger = logger;
     }
 
@@ -75,6 +78,10 @@ public class HighAlchingService : IHighAlchingService
             var recommendation = _priceRecommendationService.CalculateRecommendedPrices(priceData);
             var buyPrice = recommendation.RecommendedBuyPrice;
             if (buyPrice <= 0)
+                continue;
+
+            // Skip items with abnormally low/manipulated prices
+            if (_manipulationDetector.IsSuspicious(priceData, 50.0))
                 continue;
 
             // Calculate profit: highAlchValue - buyPrice - natureRuneCost
