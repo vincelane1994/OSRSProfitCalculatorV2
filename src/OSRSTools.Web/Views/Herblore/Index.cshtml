@@ -38,15 +38,15 @@
 <!-- Filter Panel -->
 <div class="filter-panel">
     <div class="row g-3 align-items-end">
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label for="filterMinProfit">Min Profit (per herb)</label>
             <input type="number" id="filterMinProfit" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label for="filterMinVolume">Min Volume</label>
             <input type="number" id="filterMinVolume" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
         </div>
-        <div class="col-md-3">
+        <div class="col-6 col-md-3">
             <label for="filterProfitable">Profitability</label>
             <select id="filterProfitable" class="form-select form-select-sm" onchange="applyFilters()">
                 <option value="all">All</option>
@@ -54,7 +54,7 @@
                 <option value="unprofitable">Unprofitable Only</option>
             </select>
         </div>
-        <div class="col-md-3">
+        <div class="col-12 col-md-3">
             <button class="btn btn-sm btn-outline-warning w-100" onclick="resetFilters()">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
             </button>

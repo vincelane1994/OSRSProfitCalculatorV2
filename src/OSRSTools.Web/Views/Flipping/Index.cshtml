@@ -38,7 +38,7 @@
 <!-- Filter Panel -->
 <div class="filter-panel">
     <div class="row g-3 align-items-end">
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <label for="filterMembers">Members</label>
             <select id="filterMembers" class="form-select form-select-sm" onchange="applyFilters()">
                 <option value="all">All</option>
@@ -46,23 +46,23 @@
                 <option value="f2p">F2P Only</option>
             </select>
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <label for="filterMinMargin">Min Margin</label>
             <input type="number" id="filterMinMargin" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <label for="filterMinVolume">Min Volume</label>
             <input type="number" id="filterMinVolume" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <label for="filterMinGpHr">Min GP/hr</label>
             <input type="number" id="filterMinGpHr" class="form-control form-control-sm" placeholder="No limit" onchange="applyFilters()" />
         </div>
-        <div class="col-md-2">
+        <div class="col-6 col-md-2">
             <label for="filterMinConfidence">Min Confidence</label>
             <input type="number" id="filterMinConfidence" class="form-control form-control-sm" step="0.1" min="0" max="1" placeholder="No limit" onchange="applyFilters()" />
         </div>
-        <div class="col-md-2">
+        <div class="col-12 col-md-2">
             <button class="btn btn-sm btn-outline-warning w-100" onclick="resetFilters()">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
             </button>

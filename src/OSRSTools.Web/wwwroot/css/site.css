@@ -302,33 +302,109 @@ body.sidebar-collapsed .main-content {
 .profit-negative { color: var(--profit-negative); }
 .profit-neutral { color: var(--text-secondary); }
 
-/* ===== Responsive ===== */
+/* ===== Sidebar Backdrop (mobile overlay) ===== */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 850;
+}
+
+.sidebar-backdrop.visible {
+    display: block;
+}
+
+/* ===== Responsive — tablet & mobile (≤ 768px) ===== */
 @media (max-width: 768px) {
+    /* Sidebar slides off-screen; toggle reveals it as a full overlay */
     .sidebar {
-        width: var(--sidebar-collapsed-width);
+        width: var(--sidebar-width);
+        transform: translateX(-100%);
+        transition: transform var(--transition-speed) ease;
+        z-index: 900;
     }
 
-    .sidebar .nav-label,
-    .sidebar .category-arrow {
-        display: none;
+    .sidebar.mobile-open {
+        transform: translateX(0);
     }
 
-    .sidebar .category-toggle {
-        justify-content: center;
-        padding: 10px;
-    }
-
-    .sidebar .sidebar-nav .nav-link {
-        justify-content: center;
-        padding: 10px;
-    }
-
+    /* Content takes full width — no sidebar margin */
     .main-content {
-        margin-left: var(--sidebar-collapsed-width);
+        margin-left: 0;
+    }
+
+    /* Counteract the desktop sidebar-collapsed body class on mobile */
+    body.sidebar-collapsed .main-content {
+        margin-left: 0;
+    }
+
+    /* Tighter content padding */
+    .main-content .container-fluid {
+        padding: 12px !important;
     }
 
     .header-brand {
         display: none;
+    }
+
+    /* Hide non-essential header items */
+    .header-right {
+        display: none;
+    }
+
+    /* Shrink sync status to icon only */
+    .sync-status span {
+        display: none;
+    }
+
+    /* Touch-friendly filter inputs — 16px prevents iOS auto-zoom */
+    .filter-panel input,
+    .filter-panel select {
+        font-size: 16px;
+        min-height: 44px;
+    }
+
+    /* Tighter table cells */
+    .data-table {
+        font-size: 0.8rem;
+    }
+
+    .data-table thead th,
+    .data-table tbody td {
+        padding: 6px 8px;
+    }
+
+    /* Scrollable tab rows */
+    .nav-tabs {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .nav-tabs .nav-link {
+        white-space: nowrap;
+    }
+
+    /* Smaller stat values in cards */
+    .dashboard-card .stat-value {
+        font-size: 1.2rem;
+    }
+
+    .dashboard-card {
+        padding: 14px;
+    }
+}
+
+/* ===== Extra-small phones (≤ 480px) ===== */
+@media (max-width: 480px) {
+    .dashboard-card {
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+
+    .filter-panel {
+        padding: 10px;
     }
 }
 
