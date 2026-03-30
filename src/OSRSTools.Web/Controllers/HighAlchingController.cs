@@ -7,10 +7,12 @@ namespace OSRSTools.Web.Controllers;
 public class HighAlchingController : Controller
 {
     private readonly IHighAlchingService _highAlchingService;
+    private readonly ILogger<HighAlchingController> _logger;
 
-    public HighAlchingController(IHighAlchingService highAlchingService)
+    public HighAlchingController(IHighAlchingService highAlchingService, ILogger<HighAlchingController> logger)
     {
         _highAlchingService = highAlchingService;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -30,13 +32,11 @@ public class HighAlchingController : Controller
         }
         catch (Exception ex)
         {
-            var viewModel = new HighAlchViewModel
-            {
-                ErrorMessage = "Failed to load High Alchemy data. Please try again later."
-            };
-
-            ViewBag.Error = ex.Message;
-            return View(viewModel);
+            _logger.LogError(ex, "Failed to load High Alchemy data");
+            var errorMessage = ex is HttpRequestException
+                ? "Unable to reach the OSRS pricing service. Please try again in a moment."
+                : "Failed to load High Alchemy data. Please try again later.";
+            return View(new HighAlchViewModel { ErrorMessage = errorMessage });
         }
     }
 }

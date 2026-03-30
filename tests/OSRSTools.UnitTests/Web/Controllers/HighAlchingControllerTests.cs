@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OSRSTools.Core.Entities;
 using OSRSTools.Core.Interfaces;
@@ -14,7 +15,7 @@ public class HighAlchingControllerTests
 
     public HighAlchingControllerTests()
     {
-        _sut = new HighAlchingController(_serviceMock.Object);
+        _sut = new HighAlchingController(_serviceMock.Object, Mock.Of<ILogger<HighAlchingController>>());
     }
 
     #region Index
@@ -58,7 +59,7 @@ public class HighAlchingControllerTests
         var model = Assert.IsType<HighAlchViewModel>(viewResult.Model);
         Assert.Empty(model.Items);
         Assert.NotNull(model.ErrorMessage);
-        Assert.Contains("Failed to load", model.ErrorMessage);
+        Assert.Contains("Unable to reach the OSRS pricing service", model.ErrorMessage);
     }
 
     [Fact]

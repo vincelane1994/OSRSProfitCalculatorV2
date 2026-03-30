@@ -15,12 +15,12 @@ public class ScoringConfigurationTests
     }
 
     [Fact]
-    public void DefaultValues_MarginBreakpoints_IsEmptyList()
+    public void DefaultValues_TotalProfitBreakpoints_IsEmptyList()
     {
         var config = new ScoringConfiguration();
 
-        Assert.NotNull(config.MarginBreakpoints);
-        Assert.Empty(config.MarginBreakpoints);
+        Assert.NotNull(config.TotalProfitBreakpoints);
+        Assert.Empty(config.TotalProfitBreakpoints);
     }
 
     [Fact]
@@ -33,19 +33,19 @@ public class ScoringConfigurationTests
     }
 
     [Fact]
-    public void DefaultValues_VolumeWeight_Equals0Point30()
+    public void DefaultValues_VolumeWeight_Equals0Point20()
     {
         var config = new ScoringConfiguration();
 
-        Assert.Equal(0.30, config.VolumeWeight);
+        Assert.Equal(0.20, config.VolumeWeight);
     }
 
     [Fact]
-    public void DefaultValues_MarginWeight_Equals0Point25()
+    public void DefaultValues_TotalProfitWeight_Equals0Point35()
     {
         var config = new ScoringConfiguration();
 
-        Assert.Equal(0.25, config.MarginWeight);
+        Assert.Equal(0.35, config.TotalProfitWeight);
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class ScoringConfigurationTests
     {
         var config = new ScoringConfiguration();
 
-        var total = config.VolumeWeight + config.MarginWeight
+        var total = config.VolumeWeight + config.TotalProfitWeight
                   + config.RoiWeight + config.GpPerHourWeight;
 
         Assert.Equal(1.0, total, precision: 10);

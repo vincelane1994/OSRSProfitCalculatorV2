@@ -18,7 +18,7 @@ public readonly record struct TaxCalculation
     {
         var rawTax = (long)Math.Floor(sellPrice * taxRate);
         var wasCapped = rawTax > taxCap;
-        var finalTax = wasCapped ? (int)taxCap : (int)rawTax;
+        var finalTax = (int)Math.Min(rawTax, taxCap);
 
         return new TaxCalculation
         {

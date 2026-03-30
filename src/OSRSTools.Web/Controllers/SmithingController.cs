@@ -7,10 +7,12 @@ namespace OSRSTools.Web.Controllers;
 public class SmithingController : Controller
 {
     private readonly ISmithingService _smithingService;
+    private readonly ILogger<SmithingController> _logger;
 
-    public SmithingController(ISmithingService smithingService)
+    public SmithingController(ISmithingService smithingService, ILogger<SmithingController> logger)
     {
         _smithingService = smithingService;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -33,13 +35,11 @@ public class SmithingController : Controller
         }
         catch (Exception ex)
         {
-            var viewModel = new SmithingViewModel
-            {
-                ErrorMessage = "Failed to load Smithing data. Please try again later."
-            };
-
-            ViewBag.Error = ex.Message;
-            return View(viewModel);
+            _logger.LogError(ex, "Failed to load Smithing data");
+            var errorMessage = ex is HttpRequestException
+                ? "Unable to reach the OSRS pricing service. Please try again in a moment."
+                : "Failed to load Smithing data. Please try again later.";
+            return View(new SmithingViewModel { ErrorMessage = errorMessage });
         }
     }
 }

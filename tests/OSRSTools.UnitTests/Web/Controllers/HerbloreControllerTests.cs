@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using OSRSTools.Core.Entities;
 using OSRSTools.Core.Interfaces;
@@ -14,7 +15,7 @@ public class HerbloreControllerTests
 
     public HerbloreControllerTests()
     {
-        _sut = new HerbloreController(_herbloreServiceMock.Object);
+        _sut = new HerbloreController(_herbloreServiceMock.Object, Mock.Of<ILogger<HerbloreController>>());
     }
 
     [Fact]

@@ -12,16 +12,23 @@ namespace OSRSTools.Core.Services;
 /// </summary>
 public class PriceRecommendationService : IPriceRecommendationService
 {
-    private readonly PriceWeightSettings _priceWeights;
+    private readonly IReadOnlyDictionary<TimeWindow, double> _windowWeights;
 
     public PriceRecommendationService(IOptions<PriceWeightSettings> priceWeights)
     {
-        _priceWeights = priceWeights.Value;
+        var w = priceWeights.Value;
+        _windowWeights = new Dictionary<TimeWindow, double>
+        {
+            { TimeWindow.FiveMinute, w.FiveMinute },
+            { TimeWindow.OneHour, w.OneHour },
+            { TimeWindow.SixHour, w.SixHour },
+            { TimeWindow.TwentyFourHour, w.TwentyFourHour }
+        };
     }
 
     public PriceRecommendation CalculateRecommendedPrices(ItemPriceData priceData)
     {
-        var weights = GetWindowWeights();
+        var weights = _windowWeights;
 
         // Buy price = weighted avg of instant-sell (low/AvgSellPrice) data
         var buyResult = CalculateWeightedPrice(priceData, weights, tw => tw.AvgSellPrice);
@@ -40,20 +47,9 @@ public class PriceRecommendationService : IPriceRecommendationService
 
     #region Private Helpers
 
-    private Dictionary<TimeWindow, double> GetWindowWeights()
-    {
-        return new Dictionary<TimeWindow, double>
-        {
-            { TimeWindow.FiveMinute, _priceWeights.FiveMinute },
-            { TimeWindow.OneHour, _priceWeights.OneHour },
-            { TimeWindow.SixHour, _priceWeights.SixHour },
-            { TimeWindow.TwentyFourHour, _priceWeights.TwentyFourHour }
-        };
-    }
-
     private static (int Price, int WindowsUsed) CalculateWeightedPrice(
         ItemPriceData priceData,
-        Dictionary<TimeWindow, double> weights,
+        IReadOnlyDictionary<TimeWindow, double> weights,
         Func<TimeWindowPrice, int?> priceSelector)
     {
         var availableWindows = new List<(TimeWindow Window, int Price, double Weight)>();

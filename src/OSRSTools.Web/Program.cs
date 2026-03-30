@@ -10,8 +10,11 @@ using OSRSTools.Infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Configuration binding
-builder.Services.Configure<OsrsApiSettings>(
-    builder.Configuration.GetSection("OsrsApi"));
+builder.Services.AddOptions<OsrsApiSettings>()
+    .BindConfiguration("OsrsApi")
+    .Validate(o => !string.IsNullOrWhiteSpace(o.BaseUrl), "OsrsApi:BaseUrl must not be empty")
+    .Validate(o => o.BaseUrl.EndsWith('/'), "OsrsApi:BaseUrl must end with /")
+    .ValidateOnStart();
 builder.Services.Configure<TaxSettings>(
     builder.Configuration.GetSection("Tax"));
 builder.Services.Configure<CacheSettings>(
@@ -20,6 +23,8 @@ builder.Services.Configure<PriceWeightSettings>(
     builder.Configuration.GetSection("PriceWeights"));
 builder.Services.Configure<ScoringConfiguration>(
     builder.Configuration.GetSection("Scoring"));
+builder.Services.Configure<ManipulationSettings>(
+    builder.Configuration.GetSection("ManipulationDetection"));
 
 // Core services
 builder.Services.AddControllersWithViews();

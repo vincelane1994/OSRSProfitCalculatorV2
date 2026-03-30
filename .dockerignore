@@ -1,0 +1,14 @@
+**/bin/
+**/obj/
+**/publish/
+**/.vs/
+**/.vscode/
+**/node_modules/
+tests/
+Files/
+plans/
+docs/
+nul
+*.md
+.git/
+.gitignore

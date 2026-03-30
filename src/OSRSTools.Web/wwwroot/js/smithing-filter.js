@@ -1,5 +1,10 @@
 // Smithing calculator — client-side filtering and sorting for two tabs.
 
+function safeParseInt(value, defaultVal) {
+    var parsed = parseInt(value, 10);
+    return isNaN(parsed) || parsed < 0 ? defaultVal : parsed;
+}
+
 var sortState = {
     cannonballs: { field: 'profitPerUnit', ascending: false },
     dartTips:    { field: 'profitPerUnit', ascending: false }
@@ -28,8 +33,8 @@ function applyFilters(tabOverride) {
     var data    = tab === 'cannonballs' ? cannonballs : dartTips;
     var bodyId  = tab === 'cannonballs' ? 'cannonballsBody' : 'dartTipsBody';
 
-    var minProfit    = parseInt(document.getElementById('filterMinProfit').value) || 0;
-    var minVolume    = parseInt(document.getElementById('filterMinVolume').value) || 0;
+    var minProfit    = safeParseInt(document.getElementById('filterMinProfit').value, 0);
+    var minVolume    = safeParseInt(document.getElementById('filterMinVolume').value, 0);
     var profitable   = document.getElementById('filterProfitable').value;
 
     var filtered = data.filter(function (item) {

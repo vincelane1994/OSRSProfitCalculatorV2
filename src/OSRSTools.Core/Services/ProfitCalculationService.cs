@@ -85,10 +85,14 @@ public class ProfitCalculationService : IProfitCalculationService
         // Floor hourly volume at 1 to prevent division by zero
         var hourlyVolume = Math.Max(volume24Hr / 24.0, 1.0);
 
-        var buyHours = Math.Min((double)buyLimit / hourlyVolume, buyLimitCycleHours);
-        var sellHours = Math.Min((double)quantity / hourlyVolume, buyLimitCycleHours);
+        var buyHours = (double)buyLimit / hourlyVolume;
+        var sellHours = (double)quantity / hourlyVolume;
+        var rawFillHours = buyHours + sellHours;
 
-        return buyHours + sellHours;
+        // The buy limit resets every buyLimitCycleHours (default 4h).
+        // Even if offers fill faster, we cannot restart the buy side until the
+        // cycle resets — so effective throughput is capped by one cycle per 4h.
+        return Math.Max(rawFillHours, buyLimitCycleHours);
     }
 
     public double CalculateGpPerHour(long totalProfit, double estimatedFillHours)

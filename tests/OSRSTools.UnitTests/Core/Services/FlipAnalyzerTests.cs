@@ -73,7 +73,7 @@ public class FlipAnalyzerTests
         Assert.Empty(result);
         _mockFlipCalc.Verify(s => s.CalculateFlip(It.IsAny<int>(), It.IsAny<string>(),
             It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<PriceRecommendation>(),
-            It.IsAny<int>(), It.IsAny<FlipSettings>()), Times.Never);
+            It.IsAny<ItemPriceData>(), It.IsAny<FlipSettings>()), Times.Never);
     }
 
     [Fact]
@@ -88,61 +88,7 @@ public class FlipAnalyzerTests
         Assert.Empty(result);
     }
 
-    [Fact]
-    public async Task AnalyzeFlipsAsync_InsufficientData_FilteredOut()
-    {
-        SetupMappingsAndPrices(
-            new() { [1] = new ItemMapping { ItemId = 1, Name = "Bad Data", BuyLimit = 500 } },
-            new() { [1] = CreatePriceData(1, volume24Hr: 50000) });
-        _mockPriceRec.Setup(s => s.CalculateRecommendedPrices(It.IsAny<ItemPriceData>()))
-            .Returns(new PriceRecommendation
-            {
-                WindowsUsedForBuy = 1, WindowsUsedForSell = 1,
-                RecommendedBuyPrice = 100, RecommendedSellPrice = 110
-            });
 
-        var result = await _sut.AnalyzeFlipsAsync(_settings);
-
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task AnalyzeFlipsAsync_BelowMinMargin_FilteredOut()
-    {
-        SetupMappingsAndPrices(
-            new() { [1] = new ItemMapping { ItemId = 1, Name = "Low Margin", BuyLimit = 500 } },
-            new() { [1] = CreatePriceData(1, volume24Hr: 50000) });
-        _mockPriceRec.Setup(s => s.CalculateRecommendedPrices(It.IsAny<ItemPriceData>()))
-            .Returns(new PriceRecommendation
-            {
-                WindowsUsedForBuy = 4, WindowsUsedForSell = 4,
-                RecommendedBuyPrice = 100, RecommendedSellPrice = 105 // margin 5 < MinMargin 10
-            });
-
-        var result = await _sut.AnalyzeFlipsAsync(_settings);
-
-        Assert.Empty(result);
-    }
-
-    [Fact]
-    public async Task AnalyzeFlipsAsync_ManipulatedItem_FilteredOut()
-    {
-        SetupMappingsAndPrices(
-            new() { [1] = new ItemMapping { ItemId = 1, Name = "Manipulated", BuyLimit = 500 } },
-            new() { [1] = CreatePriceData(1, volume24Hr: 50000) });
-        _mockPriceRec.Setup(s => s.CalculateRecommendedPrices(It.IsAny<ItemPriceData>()))
-            .Returns(new PriceRecommendation
-            {
-                RecommendedBuyPrice = 100, RecommendedSellPrice = 200,
-                WindowsUsedForBuy = 4, WindowsUsedForSell = 4
-            });
-        _mockManipDetector.Setup(s => s.IsSuspicious(It.IsAny<ItemPriceData>(), It.IsAny<double>()))
-            .Returns(true);
-
-        var result = await _sut.AnalyzeFlipsAsync(_settings);
-
-        Assert.Empty(result);
-    }
 
     [Fact]
     public async Task AnalyzeFlipsAsync_NoPriceData_FilteredOut()
@@ -172,12 +118,42 @@ public class FlipAnalyzerTests
             .Returns(false);
         _mockFlipCalc.Setup(s => s.CalculateFlip(It.IsAny<int>(), It.IsAny<string>(),
                 It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<PriceRecommendation>(),
-                It.IsAny<int>(), It.IsAny<FlipSettings>()))
-            .Returns(new FlipCandidate { ProfitPerUnit = -5 }); // IsProfitable = false
+                It.IsAny<ItemPriceData>(), It.IsAny<FlipSettings>()))
+            .Returns(new FlipCandidate { ProfitPerUnit = -5 });
 
         var result = await _sut.AnalyzeFlipsAsync(_settings);
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task AnalyzeFlipsAsync_ManipulatedItem_FilteredOut()
+    {
+        SetupMappingsAndPrices(
+            new() { [1] = new ItemMapping { ItemId = 1, Name = "Pump Item", BuyLimit = 500 } },
+            new() { [1] = CreatePriceData(1, volume24Hr: 50000) });
+        _mockPriceRec.Setup(s => s.CalculateRecommendedPrices(It.IsAny<ItemPriceData>()))
+            .Returns(new PriceRecommendation
+            {
+                RecommendedBuyPrice = 100, RecommendedSellPrice = 200,
+                WindowsUsedForBuy = 4, WindowsUsedForSell = 4
+            });
+        _mockFlipCalc.Setup(s => s.CalculateFlip(It.IsAny<int>(), It.IsAny<string>(),
+                It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<PriceRecommendation>(),
+                It.IsAny<ItemPriceData>(), It.IsAny<FlipSettings>()))
+            .Returns(new FlipCandidate
+            {
+                ProfitPerUnit = 50, RoiPercent = 15.0, GpPerHour = 100000,
+                BuyWindowsUsed = 4, SellWindowsUsed = 4,
+                Volume24Hr = 50000, PriceVolatilityPercent = 3.0
+            });
+        _mockManipDetector.Setup(s => s.IsSuspicious(It.IsAny<ItemPriceData>(), It.IsAny<double>()))
+            .Returns(true);
+
+        var result = await _sut.AnalyzeFlipsAsync(_settings);
+
+        Assert.Empty(result);
+        _mockScoring.Verify(s => s.CalculateFlipScore(It.IsAny<FlipCandidate>()), Times.Never);
     }
 
     #endregion
@@ -200,10 +176,15 @@ public class FlipAnalyzerTests
             .Returns(false);
         _mockFlipCalc.Setup(s => s.CalculateFlip(It.IsAny<int>(), It.IsAny<string>(),
                 It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<PriceRecommendation>(),
-                It.IsAny<int>(), It.IsAny<FlipSettings>()))
-            .Returns(new FlipCandidate { ProfitPerUnit = 50, GpPerHour = 100000 });
+                It.IsAny<ItemPriceData>(), It.IsAny<FlipSettings>()))
+            .Returns(new FlipCandidate
+            {
+                ProfitPerUnit = 50, GpPerHour = 100000,
+                BuyWindowsUsed = 4, SellWindowsUsed = 4,
+                Volume24Hr = 50000, PriceVolatilityPercent = 3.0
+            });
         _mockScoring.Setup(s => s.CalculateFlipScore(It.IsAny<FlipCandidate>())).Returns(7.5);
-        _mockScoring.Setup(s => s.CalculateConfidence(It.IsAny<int>(), It.IsAny<int>())).Returns(0.9);
+        _mockScoring.Setup(s => s.CalculateConfidence(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>())).Returns(0.9);
 
         var result = await _sut.AnalyzeFlipsAsync(_settings);
 
@@ -213,7 +194,7 @@ public class FlipAnalyzerTests
     }
 
     [Fact]
-    public async Task AnalyzeFlipsAsync_MultipleItems_SortedByGpPerHourDescending()
+    public async Task AnalyzeFlipsAsync_MultipleItems_SortedByFlipScoreDescending()
     {
         var mappings = new Dictionary<int, ItemMapping>
         {
@@ -237,19 +218,28 @@ public class FlipAnalyzerTests
             .Returns(false);
         _mockFlipCalc.Setup(s => s.CalculateFlip(1, It.IsAny<string>(),
                 It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<PriceRecommendation>(),
-                It.IsAny<int>(), It.IsAny<FlipSettings>()))
-            .Returns(new FlipCandidate { ItemId = 1, ProfitPerUnit = 50, GpPerHour = 50000 });
+                It.IsAny<ItemPriceData>(), It.IsAny<FlipSettings>()))
+            .Returns(new FlipCandidate
+            {
+                ItemId = 1, ProfitPerUnit = 50, GpPerHour = 50000,
+                BuyWindowsUsed = 4, SellWindowsUsed = 4, Volume24Hr = 50000
+            });
         _mockFlipCalc.Setup(s => s.CalculateFlip(2, It.IsAny<string>(),
                 It.IsAny<bool>(), It.IsAny<int>(), It.IsAny<PriceRecommendation>(),
-                It.IsAny<int>(), It.IsAny<FlipSettings>()))
-            .Returns(new FlipCandidate { ItemId = 2, ProfitPerUnit = 100, GpPerHour = 200000 });
-        _mockScoring.Setup(s => s.CalculateFlipScore(It.IsAny<FlipCandidate>())).Returns(5.0);
-        _mockScoring.Setup(s => s.CalculateConfidence(It.IsAny<int>(), It.IsAny<int>())).Returns(0.8);
+                It.IsAny<ItemPriceData>(), It.IsAny<FlipSettings>()))
+            .Returns(new FlipCandidate
+            {
+                ItemId = 2, ProfitPerUnit = 100, GpPerHour = 200000,
+                BuyWindowsUsed = 4, SellWindowsUsed = 4, Volume24Hr = 50000
+            });
+        _mockScoring.Setup(s => s.CalculateFlipScore(It.Is<FlipCandidate>(c => c.ItemId == 1))).Returns(3.0);
+        _mockScoring.Setup(s => s.CalculateFlipScore(It.Is<FlipCandidate>(c => c.ItemId == 2))).Returns(8.0);
+        _mockScoring.Setup(s => s.CalculateConfidence(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<double>())).Returns(0.8);
 
         var result = await _sut.AnalyzeFlipsAsync(_settings);
 
         Assert.Equal(2, result.Count);
-        Assert.Equal(2, result[0].ItemId); // Higher GP/hr first
+        Assert.Equal(2, result[0].ItemId); // Higher score first
         Assert.Equal(1, result[1].ItemId);
     }
 

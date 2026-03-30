@@ -61,7 +61,7 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
             int? highAlch = dto.HighAlch;
             if (highAlch.HasValue && highAlch.Value < 0)
             {
-                _logger.LogWarning("Item {ItemId}: negative high alch value {Value}, treating as null", dto.Id, highAlch.Value);
+                _logger.LogDebug("Item {ItemId}: negative high alch value {Value}, treating as null", dto.Id, highAlch.Value);
                 highAlch = null;
             }
 
@@ -178,9 +178,9 @@ public class OsrsWikiApiClient : IItemMappingRepository, IPriceRepository
             }
 
             if (priceDto.HighPriceVolume.HasValue && priceDto.HighPriceVolume.Value > int.MaxValue)
-                _logger.LogWarning("Item {ItemId}: HighPriceVolume {Volume} exceeds int.MaxValue, capping", itemId, priceDto.HighPriceVolume.Value);
+                _logger.LogDebug("Item {ItemId}: HighPriceVolume {Volume} exceeds int.MaxValue, capping", itemId, priceDto.HighPriceVolume.Value);
             if (priceDto.LowPriceVolume.HasValue && priceDto.LowPriceVolume.Value > int.MaxValue)
-                _logger.LogWarning("Item {ItemId}: LowPriceVolume {Volume} exceeds int.MaxValue, capping", itemId, priceDto.LowPriceVolume.Value);
+                _logger.LogDebug("Item {ItemId}: LowPriceVolume {Volume} exceeds int.MaxValue, capping", itemId, priceDto.LowPriceVolume.Value);
 
             prices[itemId] = new TimeWindowPrice
             {

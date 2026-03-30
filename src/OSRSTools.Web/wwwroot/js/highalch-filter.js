@@ -6,12 +6,17 @@ document.addEventListener('DOMContentLoaded', function () {
     applyFilters();
 });
 
+function safeParseInt(value, defaultVal) {
+    var parsed = parseInt(value, 10);
+    return isNaN(parsed) || parsed < 0 ? defaultVal : parsed;
+}
+
 function applyFilters() {
     var membersFilter = document.getElementById('filterMembers').value;
-    var minProfit = parseInt(document.getElementById('filterMinProfit').value) || 0;
-    var maxBuyPrice = parseInt(document.getElementById('filterMaxBuyPrice').value) || Number.MAX_SAFE_INTEGER;
-    var minVolume = parseInt(document.getElementById('filterMinVolume').value) || 0;
-    var maxInvestment = parseInt(document.getElementById('filterMaxInvestment').value) || Number.MAX_SAFE_INTEGER;
+    var minProfit = safeParseInt(document.getElementById('filterMinProfit').value, 0);
+    var maxBuyPrice = safeParseInt(document.getElementById('filterMaxBuyPrice').value, Number.MAX_SAFE_INTEGER);
+    var minVolume = safeParseInt(document.getElementById('filterMinVolume').value, 0);
+    var maxInvestment = safeParseInt(document.getElementById('filterMaxInvestment').value, Number.MAX_SAFE_INTEGER);
 
     var filtered = items.filter(function (item) {
         if (membersFilter === 'members' && !item.members) return false;

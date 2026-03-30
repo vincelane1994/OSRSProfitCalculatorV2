@@ -20,37 +20,51 @@ public class ScoringService : IScoringService
     public double ScoreVolume(int volume24Hr) =>
         Interpolate(volume24Hr, _config.VolumeBreakpoints);
 
-    public double ScoreMargin(int margin) =>
-        Interpolate(margin, _config.MarginBreakpoints);
+    public double ScoreTotalProfit(long totalProfit) =>
+        Interpolate(totalProfit, _config.TotalProfitBreakpoints);
 
     public double ScoreRoi(double roiPercent) =>
         Interpolate(roiPercent, _config.RoiBreakpoints);
 
-    public double CalculateConfidence(int windowsUsed, int volume24Hr)
+    public double CalculateConfidence(int windowsUsed, int volume24Hr, double volatilityPercent)
     {
-        var windowScore = Math.Min(windowsUsed / (double)_config.MinWindowsForHighConfidence, 1.0) * 0.6;
-        var volumeScore = Math.Min(volume24Hr / (double)_config.MinVolumeForHighConfidence, 1.0) * 0.4;
+        // Volume score (40%)
+        var volumeScore = Math.Min(volume24Hr / (double)_config.MinVolumeForHighConfidence, 1.0);
 
-        return Math.Round(Math.Min(windowScore + volumeScore, 1.0), 2);
+        // Price stability score (35%)
+        var stabilityScore = volatilityPercent switch
+        {
+            <= 5 => 1.0,
+            <= 15 => 0.7,
+            <= 30 => 0.4,
+            _ => 0.1
+        };
+
+        // Window coverage score (25%)
+        var windowScore = Math.Min(windowsUsed / (double)_config.MinWindowsForHighConfidence, 1.0);
+
+        return Math.Round(
+            Math.Min(volumeScore * 0.40 + stabilityScore * 0.35 + windowScore * 0.25, 1.0), 2);
     }
 
     public double CalculateFlipScore(FlipCandidate candidate)
     {
         var volumeScore = ScoreVolume(candidate.Volume24Hr);
-        var marginScore = ScoreMargin(candidate.Margin);
+        var totalProfitScore = ScoreTotalProfit(candidate.TotalProfit);
         var roiScore = ScoreRoi(candidate.RoiPercent);
         var gpHrScore = candidate.GpPerHour > 0
             ? Math.Min(candidate.GpPerHour / 1_000_000.0, 1.0)
             : 0;
 
         var rawScore = (volumeScore * _config.VolumeWeight)
-            + (marginScore * _config.MarginWeight)
+            + (totalProfitScore * _config.TotalProfitWeight)
             + (roiScore * _config.RoiWeight)
             + (gpHrScore * _config.GpPerHourWeight);
 
         var confidence = CalculateConfidence(
-            candidate.HasSufficientData ? 4 : 2,
-            candidate.Volume24Hr);
+            Math.Min(candidate.BuyWindowsUsed, candidate.SellWindowsUsed),
+            candidate.Volume24Hr,
+            candidate.PriceVolatilityPercent);
 
         return Math.Round(rawScore * confidence * 10.0, 1);
     }

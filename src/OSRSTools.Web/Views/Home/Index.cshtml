@@ -36,30 +36,90 @@
         </div>
     </div>
 
-    <!-- Flipping Summary -->
+    <!-- Flipping Summary — Carousel -->
     <div class="col-lg-3 col-md-6">
-        <div class="dashboard-card">
+        <div class="dashboard-card carousel-card">
             <h5><i class="bi bi-arrow-left-right me-2"></i>Flipping</h5>
-            <div class="stat-value">--</div>
-            <div class="stat-label">Top GP/hr</div>
+            @if (Model.TopFlipItems.Any())
+            {
+                <div class="carousel-container">
+                    <button class="carousel-arrow carousel-prev" id="flipPrev" title="Previous item">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div class="carousel-content">
+                        <div class="stat-value profit-positive" id="flipItemName">--</div>
+                        <div class="stat-label" id="flipItemGpHr">--</div>
+                        <div class="stat-label" id="flipItemRoi">--</div>
+                    </div>
+                    <button class="carousel-arrow carousel-next" id="flipNext" title="Next item">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="carousel-dots" id="flipDots"></div>
+            }
+            else
+            {
+                <div class="stat-value">--</div>
+                <div class="stat-label">Top GP/hr</div>
+            }
         </div>
     </div>
 
-    <!-- Smithing Summary -->
+    <!-- Smithing Summary — Carousel -->
     <div class="col-lg-3 col-md-6">
-        <div class="dashboard-card">
+        <div class="dashboard-card carousel-card">
             <h5><i class="bi bi-hammer me-2"></i>Smithing</h5>
-            <div class="stat-value">--</div>
-            <div class="stat-label">Best profit/bar</div>
+            @if (Model.TopSmithingItems.Any())
+            {
+                <div class="carousel-container">
+                    <button class="carousel-arrow carousel-prev" id="smithPrev" title="Previous item">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div class="carousel-content">
+                        <div class="stat-value profit-positive" id="smithItemName">--</div>
+                        <div class="stat-label" id="smithItemProfit">--</div>
+                        <div class="stat-label" id="smithItemRoi">--</div>
+                    </div>
+                    <button class="carousel-arrow carousel-next" id="smithNext" title="Next item">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="carousel-dots" id="smithDots"></div>
+            }
+            else
+            {
+                <div class="stat-value">--</div>
+                <div class="stat-label">Best profit/bar</div>
+            }
         </div>
     </div>
 
-    <!-- Herblore Summary -->
+    <!-- Herblore Summary — Carousel -->
     <div class="col-lg-3 col-md-6">
-        <div class="dashboard-card">
+        <div class="dashboard-card carousel-card">
             <h5><i class="bi bi-flower1 me-2"></i>Herblore</h5>
-            <div class="stat-value">--</div>
-            <div class="stat-label">Best profit/herb</div>
+            @if (Model.TopHerbloreItems.Any())
+            {
+                <div class="carousel-container">
+                    <button class="carousel-arrow carousel-prev" id="herbPrev" title="Previous item">
+                        <i class="bi bi-chevron-left"></i>
+                    </button>
+                    <div class="carousel-content">
+                        <div class="stat-value profit-positive" id="herbItemName">--</div>
+                        <div class="stat-label" id="herbItemProfit">--</div>
+                        <div class="stat-label" id="herbItemMethod">--</div>
+                    </div>
+                    <button class="carousel-arrow carousel-next" id="herbNext" title="Next item">
+                        <i class="bi bi-chevron-right"></i>
+                    </button>
+                </div>
+                <div class="carousel-dots" id="herbDots"></div>
+            }
+            else
+            {
+                <div class="stat-value">--</div>
+                <div class="stat-label">Best profit/herb</div>
+            }
         </div>
     </div>
 </div>
@@ -77,11 +137,39 @@
 </div>
 
 @section Scripts {
-    @if (Model.TopHighAlchItems.Any())
-    {
-        <script>
-            var topAlchItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopHighAlchItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
-        </script>
-        <script src="~/js/dashboard.js"></script>
-    }
+    <script>
+        @if (Model.TopHighAlchItems.Any())
+        {
+            <text>var topAlchItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopHighAlchItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));</text>
+        }
+        else
+        {
+            <text>var topAlchItems = [];</text>
+        }
+        @if (Model.TopFlipItems.Any())
+        {
+            <text>var topFlipItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopFlipItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));</text>
+        }
+        else
+        {
+            <text>var topFlipItems = [];</text>
+        }
+        @if (Model.TopSmithingItems.Any())
+        {
+            <text>var topSmithingItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopSmithingItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));</text>
+        }
+        else
+        {
+            <text>var topSmithingItems = [];</text>
+        }
+        @if (Model.TopHerbloreItems.Any())
+        {
+            <text>var topHerbloreItems = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.TopHerbloreItems, new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));</text>
+        }
+        else
+        {
+            <text>var topHerbloreItems = [];</text>
+        }
+    </script>
+    <script src="~/js/dashboard.js"></script>
 }

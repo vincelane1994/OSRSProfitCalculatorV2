@@ -1,5 +1,10 @@
 // Herblore calculator — client-side filtering and sorting for three tabs.
 
+function safeParseInt(value, defaultVal) {
+    var parsed = parseInt(value, 10);
+    return isNaN(parsed) || parsed < 0 ? defaultVal : parsed;
+}
+
 var sortState = {
     cleaning:     { field: 'profitPerUnit', ascending: false },
     fullProcess:  { field: 'profitPerUnit', ascending: false },
@@ -45,8 +50,8 @@ function applyFilters(tabOverride) {
     var tab  = tabOverride || getActiveTab();
     var data = getTabData(tab);
 
-    var minProfit  = parseInt(document.getElementById('filterMinProfit').value) || 0;
-    var minVolume  = parseInt(document.getElementById('filterMinVolume').value) || 0;
+    var minProfit  = safeParseInt(document.getElementById('filterMinProfit').value, 0);
+    var minVolume  = safeParseInt(document.getElementById('filterMinVolume').value, 0);
     var profitable = document.getElementById('filterProfitable').value;
 
     var filtered = data.filter(function (item) {

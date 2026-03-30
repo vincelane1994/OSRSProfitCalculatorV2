@@ -7,10 +7,12 @@ namespace OSRSTools.Web.Controllers;
 public class HerbloreController : Controller
 {
     private readonly IHerbloreService _herbloreService;
+    private readonly ILogger<HerbloreController> _logger;
 
-    public HerbloreController(IHerbloreService herbloreService)
+    public HerbloreController(IHerbloreService herbloreService, ILogger<HerbloreController> logger)
     {
         _herbloreService = herbloreService;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -35,13 +37,11 @@ public class HerbloreController : Controller
         }
         catch (Exception ex)
         {
-            var viewModel = new HerbloreViewModel
-            {
-                ErrorMessage = "Failed to load Herblore data. Please try again later."
-            };
-
-            ViewBag.Error = ex.Message;
-            return View(viewModel);
+            _logger.LogError(ex, "Failed to load Herblore data");
+            var errorMessage = ex is HttpRequestException
+                ? "Unable to reach the OSRS pricing service. Please try again in a moment."
+                : "Failed to load Herblore data. Please try again later.";
+            return View(new HerbloreViewModel { ErrorMessage = errorMessage });
         }
     }
 }

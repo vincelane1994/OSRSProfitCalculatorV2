@@ -60,6 +60,33 @@ public class FlipCandidate
     /// <summary>Whether enough time window data exists for a reliable recommendation.</summary>
     public bool HasSufficientData { get; init; }
 
+    /// <summary>Number of time windows used to calculate the recommended buy price.</summary>
+    public int BuyWindowsUsed { get; init; }
+
+    /// <summary>Number of time windows used to calculate the recommended sell price.</summary>
+    public int SellWindowsUsed { get; init; }
+
+    /// <summary>Price volatility percentage: max deviation of 5m vs 6h avg prices (buy or sell).</summary>
+    public double PriceVolatilityPercent { get; init; }
+
+    /// <summary>Profit per 4-hour buy limit cycle: ProfitPerUnit × BuyLimit.</summary>
+    public long ProfitPerCycle { get; init; }
+
+    /// <summary>Raw time window price data for detail view.</summary>
+    public List<WindowPriceSnapshot> WindowPrices { get; init; } = [];
+
     /// <summary>Whether this flip is profitable after tax.</summary>
     public bool IsProfitable => ProfitPerUnit > 0;
+}
+
+/// <summary>
+/// Serializable snapshot of a single time window's price and volume data.
+/// </summary>
+public class WindowPriceSnapshot
+{
+    public string Window { get; init; } = string.Empty;
+    public int? AvgBuyPrice { get; init; }
+    public int? AvgSellPrice { get; init; }
+    public int? BuyVolume { get; init; }
+    public int? SellVolume { get; init; }
 }

@@ -19,6 +19,6 @@ public interface IFlipCalculator
         bool members,
         int buyLimit,
         PriceRecommendation prices,
-        int volume24Hr,
+        ItemPriceData priceData,
         FlipSettings settings);
 }

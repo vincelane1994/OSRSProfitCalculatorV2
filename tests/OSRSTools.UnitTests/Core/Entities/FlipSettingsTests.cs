@@ -6,27 +6,27 @@ namespace OSRSTools.UnitTests.Core.Entities;
 public class FlipSettingsTests
 {
     [Fact]
-    public void DefaultValues_MinVolume_Equals10000()
+    public void DefaultValues_MinVolume_Equals5000()
     {
         var settings = new FlipSettings();
 
-        Assert.Equal(10_000, settings.MinVolume);
+        Assert.Equal(5_000, settings.MinVolume);
     }
 
     [Fact]
-    public void DefaultValues_MinBuyLimit_Equals100()
+    public void DefaultValues_MinBuyLimit_EqualsZero()
     {
         var settings = new FlipSettings();
 
-        Assert.Equal(100, settings.MinBuyLimit);
+        Assert.Equal(0, settings.MinBuyLimit);
     }
 
     [Fact]
-    public void DefaultValues_MinMargin_Equals10()
+    public void DefaultValues_MinMargin_EqualsOne()
     {
         var settings = new FlipSettings();
 
-        Assert.Equal(10, settings.MinMargin);
+        Assert.Equal(1, settings.MinMargin);
     }
 
     [Fact]
@@ -46,11 +46,11 @@ public class FlipSettingsTests
     }
 
     [Fact]
-    public void DefaultValues_MaxResults_Equals100()
+    public void DefaultValues_MaxResults_Equals500()
     {
         var settings = new FlipSettings();
 
-        Assert.Equal(100, settings.MaxResults);
+        Assert.Equal(500, settings.MaxResults);
     }
 
     [Fact]

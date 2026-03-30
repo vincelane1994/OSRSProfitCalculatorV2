@@ -8,10 +8,12 @@ namespace OSRSTools.Web.Controllers;
 public class FlippingController : Controller
 {
     private readonly IFlipAnalyzer _flipAnalyzer;
+    private readonly ILogger<FlippingController> _logger;
 
-    public FlippingController(IFlipAnalyzer flipAnalyzer)
+    public FlippingController(IFlipAnalyzer flipAnalyzer, ILogger<FlippingController> logger)
     {
         _flipAnalyzer = flipAnalyzer;
+        _logger = logger;
     }
 
     public async Task<IActionResult> Index()
@@ -33,13 +35,11 @@ public class FlippingController : Controller
         }
         catch (Exception ex)
         {
-            var viewModel = new FlippingViewModel
-            {
-                ErrorMessage = "Failed to load Flipping data. Please try again later."
-            };
-
-            ViewBag.Error = ex.Message;
-            return View(viewModel);
+            _logger.LogError(ex, "Failed to load Flipping data");
+            var errorMessage = ex is HttpRequestException
+                ? "Unable to reach the OSRS pricing service. Please try again in a moment."
+                : "Failed to load Flipping data. Please try again later.";
+            return View(new FlippingViewModel { ErrorMessage = errorMessage });
         }
     }
 }

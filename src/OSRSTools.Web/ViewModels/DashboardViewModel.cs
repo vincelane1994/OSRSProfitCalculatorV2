@@ -9,10 +9,12 @@ public class DashboardViewModel
     /// <summary>Top 5 High Alchemy items sorted by ROI for the dashboard carousel.</summary>
     public List<HighAlchItem> TopHighAlchItems { get; set; } = new();
 
-    public double? TopFlippingGpPerHour { get; set; }
-    public string? TopFlippingItem { get; set; }
-    public int? TopSmithingProfit { get; set; }
-    public string? TopSmithingItem { get; set; }
-    public int? TopHerbloreProfit { get; set; }
-    public string? TopHerbloreItem { get; set; }
+    /// <summary>Top 5 flip candidates sorted by GP/hr for the dashboard carousel.</summary>
+    public List<FlipCandidate> TopFlipItems { get; set; } = new();
+
+    /// <summary>Top 5 smithing items sorted by profit per bar for the dashboard carousel.</summary>
+    public List<SmithingItem> TopSmithingItems { get; set; } = new();
+
+    /// <summary>Top 5 herblore items sorted by profit per operation for the dashboard carousel.</summary>
+    public List<HerbloreItem> TopHerbloreItems { get; set; } = new();
 }

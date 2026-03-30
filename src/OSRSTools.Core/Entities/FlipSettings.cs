@@ -6,13 +6,13 @@ namespace OSRSTools.Core.Entities;
 public class FlipSettings
 {
     /// <summary>Minimum 24-hour volume required to consider an item.</summary>
-    public int MinVolume { get; set; } = 10_000;
+    public int MinVolume { get; set; } = 5_000;
 
     /// <summary>Minimum GE buy limit required.</summary>
-    public int MinBuyLimit { get; set; } = 100;
+    public int MinBuyLimit { get; set; } = 0;
 
     /// <summary>Minimum margin (sell - buy) in GP to consider an item.</summary>
-    public int MinMargin { get; set; } = 10;
+    public int MinMargin { get; set; } = 1;
 
     /// <summary>Maximum total investment in GP (buy price * quantity cap).</summary>
     public long MaxInvestment { get; set; } = 10_000_000;
@@ -21,5 +21,5 @@ public class FlipSettings
     public double BuyLimitCycleHours { get; set; } = 4.0;
 
     /// <summary>Maximum number of results to display.</summary>
-    public int MaxResults { get; set; } = 100;
+    public int MaxResults { get; set; } = 500;
 }

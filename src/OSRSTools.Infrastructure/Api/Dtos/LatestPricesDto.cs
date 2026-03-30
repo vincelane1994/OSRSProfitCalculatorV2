@@ -8,7 +8,7 @@ namespace OSRSTools.Infrastructure.Api.Dtos;
 public class LatestPricesDto
 {
     [JsonPropertyName("data")]
-    public Dictionary<string, LatestItemPriceDto> Data { get; set; } = new();
+    public Dictionary<string, LatestItemPriceDto>? Data { get; set; }
 }
 
 /// <summary>

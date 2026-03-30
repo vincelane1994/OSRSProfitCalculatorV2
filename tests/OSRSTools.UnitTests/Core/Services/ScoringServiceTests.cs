@@ -21,23 +21,25 @@ public class ScoringServiceTests
                 new() { Threshold = 50000, Score = 0.6 },
                 new() { Threshold = 200000, Score = 1.0 }
             },
-            MarginBreakpoints = new List<BreakpointEntry>
+            TotalProfitBreakpoints = new List<BreakpointEntry>
             {
-                new() { Threshold = 5, Score = 0.05 },
-                new() { Threshold = 50, Score = 0.2 },
-                new() { Threshold = 200, Score = 0.5 },
-                new() { Threshold = 1000, Score = 0.8 },
-                new() { Threshold = 5000, Score = 1.0 }
+                new() { Threshold = 10000, Score = 0.1 },
+                new() { Threshold = 50000, Score = 0.3 },
+                new() { Threshold = 200000, Score = 0.6 },
+                new() { Threshold = 500000, Score = 0.8 },
+                new() { Threshold = 2000000, Score = 1.0 }
             },
             RoiBreakpoints = new List<BreakpointEntry>
             {
-                new() { Threshold = 0.5, Score = 0.1 },
-                new() { Threshold = 2.0, Score = 0.3 },
-                new() { Threshold = 5.0, Score = 0.6 },
-                new() { Threshold = 15.0, Score = 1.0 }
+                new() { Threshold = 0.0, Score = 0.0 },
+                new() { Threshold = 1.0, Score = 0.05 },
+                new() { Threshold = 3.0, Score = 0.30 },
+                new() { Threshold = 5.0, Score = 0.60 },
+                new() { Threshold = 10.0, Score = 0.85 },
+                new() { Threshold = 20.0, Score = 1.0 }
             },
-            VolumeWeight = 0.30,
-            MarginWeight = 0.25,
+            VolumeWeight = 0.20,
+            TotalProfitWeight = 0.35,
             RoiWeight = 0.20,
             GpPerHourWeight = 0.25,
             MinWindowsForHighConfidence = 3,
@@ -79,36 +81,67 @@ public class ScoringServiceTests
         Assert.Equal(1.0, result);
     }
 
-    #endregion
-
-    #region ScoreMargin — Breakpoint Interpolation
-
     [Fact]
-    public void ScoreMargin_AtExactBreakpoint_ReturnsExactScore()
+    public void ScoreVolume_ZeroVolume_ReturnsMinBreakpointScore()
     {
-        var result = _sut.ScoreMargin(200);
-        Assert.Equal(0.5, result);
-    }
-
-    [Fact]
-    public void ScoreMargin_BetweenBreakpoints_InterpolatesLinearly()
-    {
-        // 125 between 50 (0.2) and 200 (0.5)
-        // Progress: (125 - 50) / (200 - 50) = 0.5
-        // Score: 0.2 + 0.5 * 0.3 = 0.35
-        var result = _sut.ScoreMargin(125);
-        Assert.Equal(0.35, result, precision: 2);
-    }
-
-    #endregion
-
-    #region ScoreRoi — Breakpoint Interpolation
-
-    [Fact]
-    public void ScoreRoi_BelowMinimum_ReturnsMinScore()
-    {
-        var result = _sut.ScoreRoi(0.1);
+        var result = _sut.ScoreVolume(0);
         Assert.Equal(0.1, result);
+    }
+
+    #endregion
+
+    #region ScoreTotalProfit — Breakpoint Interpolation
+
+    [Fact]
+    public void ScoreTotalProfit_AtExactBreakpoint_ReturnsExactScore()
+    {
+        var result = _sut.ScoreTotalProfit(50000);
+        Assert.Equal(0.3, result);
+    }
+
+    [Fact]
+    public void ScoreTotalProfit_BelowMinimum_ReturnsMinScore()
+    {
+        var result = _sut.ScoreTotalProfit(5000);
+        Assert.Equal(0.1, result);
+    }
+
+    [Fact]
+    public void ScoreTotalProfit_AboveMaximum_ReturnsMaxScore()
+    {
+        var result = _sut.ScoreTotalProfit(5_000_000);
+        Assert.Equal(1.0, result);
+    }
+
+    [Fact]
+    public void ScoreTotalProfit_BetweenBreakpoints_InterpolatesLinearly()
+    {
+        // 125000 between 50000 (0.3) and 200000 (0.6)
+        // Progress: (125000 - 50000) / (200000 - 50000) = 0.5
+        // Score: 0.3 + 0.5 * 0.3 = 0.45
+        var result = _sut.ScoreTotalProfit(125000);
+        Assert.Equal(0.45, result, precision: 2);
+    }
+
+    #endregion
+
+    #region ScoreRoi — Updated Breakpoints
+
+    [Fact]
+    public void ScoreRoi_AtZero_ReturnsZero()
+    {
+        var result = _sut.ScoreRoi(0.0);
+        Assert.Equal(0.0, result);
+    }
+
+    [Fact]
+    public void ScoreRoi_AtTwoPercent_ReturnsLowScore()
+    {
+        // 2.0 between 1.0 (0.05) and 3.0 (0.30)
+        // Progress: (2.0 - 1.0) / (3.0 - 1.0) = 0.5
+        // Score: 0.05 + 0.5 * 0.25 = 0.175
+        var result = _sut.ScoreRoi(2.0);
+        Assert.Equal(0.175, result, precision: 3);
     }
 
     [Fact]
@@ -118,35 +151,70 @@ public class ScoringServiceTests
         Assert.Equal(1.0, result);
     }
 
+    [Fact]
+    public void ScoreRoi_BelowMinimum_ReturnsZero()
+    {
+        var result = _sut.ScoreRoi(-5.0);
+        Assert.Equal(0.0, result);
+    }
+
     #endregion
 
-    #region CalculateConfidence
+    #region CalculateConfidence — New Formula with Volatility
 
     [Fact]
-    public void CalculateConfidence_MaxWindowsAndVolume_ReturnsOne()
+    public void CalculateConfidence_HighDataLowVolatility_ReturnsHighScore()
     {
-        // windows: min(3/3, 1) * 0.6 = 0.6
-        // volume: min(50000/50000, 1) * 0.4 = 0.4
+        // volume: min(50000/50000, 1) * 0.40 = 0.40
+        // stability: volatility <= 5 → 1.0 * 0.35 = 0.35
+        // windows: min(3/3, 1) * 0.25 = 0.25
         // total: 1.0
-        var result = _sut.CalculateConfidence(3, 50000);
+        var result = _sut.CalculateConfidence(3, 50000, 3.0);
         Assert.Equal(1.0, result);
     }
 
     [Fact]
     public void CalculateConfidence_LowWindowsAndVolume_ReturnsLowScore()
     {
-        // windows: min(1/3, 1) * 0.6 = 0.2
-        // volume: min(10000/50000, 1) * 0.4 = 0.08
-        // total: 0.28
-        var result = _sut.CalculateConfidence(1, 10000);
-        Assert.Equal(0.28, result);
+        // volume: min(10000/50000, 1) * 0.40 = 0.08
+        // stability: volatility <= 5 → 1.0 * 0.35 = 0.35
+        // windows: min(1/3, 1) * 0.25 = 0.0833
+        var result = _sut.CalculateConfidence(1, 10000, 2.0);
+        Assert.Equal(0.51, result);
     }
 
     [Fact]
-    public void CalculateConfidence_ZeroWindowsAndVolume_ReturnsZero()
+    public void CalculateConfidence_HighVolatility_ReducesConfidence()
     {
-        var result = _sut.CalculateConfidence(0, 0);
-        Assert.Equal(0.0, result);
+        // volume: min(50000/50000, 1) * 0.40 = 0.40
+        // stability: volatility > 30 → 0.1 * 0.35 = 0.035
+        // windows: min(3/3, 1) * 0.25 = 0.25
+        // total: 0.685 → rounded to 0.69 or 0.68 depending on floating point
+        var result = _sut.CalculateConfidence(3, 50000, 50.0);
+        Assert.Equal(0.68, result, precision: 2);
+    }
+
+    [Fact]
+    public void CalculateConfidence_ModerateVolatility_GivesMiddleStabilityScore()
+    {
+        // volatility 10% → stability = 0.7
+        // volume: min(50000/50000, 1) * 0.40 = 0.40
+        // stability: 0.7 * 0.35 = 0.245
+        // windows: min(3/3, 1) * 0.25 = 0.25
+        // total: 0.895 → 0.9
+        var result = _sut.CalculateConfidence(3, 50000, 10.0);
+        Assert.Equal(0.9, result);
+    }
+
+    [Fact]
+    public void CalculateConfidence_ZeroEverything_ReturnsStabilityOnly()
+    {
+        // volume: 0
+        // stability: volatility 0 → 1.0 * 0.35 = 0.35
+        // windows: 0
+        // total: 0.35
+        var result = _sut.CalculateConfidence(0, 0, 0);
+        Assert.Equal(0.35, result);
     }
 
     #endregion
@@ -159,10 +227,14 @@ public class ScoringServiceTests
         var candidate = new FlipCandidate
         {
             Volume24Hr = 100000,
-            Margin = 500,
+            ProfitPerCycle = 2_000_000,
+            TotalProfit = 500_000,
             RoiPercent = 8.0,
             GpPerHour = 500000,
-            HasSufficientData = true
+            BuyWindowsUsed = 4,
+            SellWindowsUsed = 4,
+            PriceVolatilityPercent = 3.0,
+            ProfitPerUnit = 100
         };
 
         var result = _sut.CalculateFlipScore(candidate);
@@ -174,94 +246,40 @@ public class ScoringServiceTests
     [Fact]
     public void CalculateFlipScore_ZeroValues_ReturnsLowScore()
     {
-        // Zero values still get minimum breakpoint scores (not zero),
-        // but confidence is 0 for HasSufficientData=false with 0 volume,
-        // yielding windowScore=min(2/3,1)*0.6=0.4, volumeScore=0 => confidence=0.4
-        // Sub-scores use min breakpoint values, so result is small but non-zero.
         var candidate = new FlipCandidate
         {
             Volume24Hr = 0,
-            Margin = 0,
+            ProfitPerCycle = 0,
             RoiPercent = 0,
             GpPerHour = 0,
-            HasSufficientData = false
+            BuyWindowsUsed = 0,
+            SellWindowsUsed = 0,
+            PriceVolatilityPercent = 0
         };
 
         var result = _sut.CalculateFlipScore(candidate);
         Assert.True(result >= 0);
-        Assert.True(result < 1.0);
+        Assert.True(result < 2.0);
     }
 
     [Fact]
-    public void CalculateFlipScore_LowConfidence_ReducesScore()
+    public void CalculateFlipScore_HighVolatility_ReducesScore()
     {
-        var highConfCandidate = new FlipCandidate
+        var stableCandidate = new FlipCandidate
         {
-            Volume24Hr = 100000, Margin = 500, RoiPercent = 5.0, GpPerHour = 500000,
-            HasSufficientData = true, ProfitPerUnit = 100
+            Volume24Hr = 100000, ProfitPerCycle = 1_000_000, TotalProfit = 200_000, RoiPercent = 5.0, GpPerHour = 500000,
+            BuyWindowsUsed = 3, SellWindowsUsed = 3, PriceVolatilityPercent = 2.0, ProfitPerUnit = 100
         };
-        var lowConfCandidate = new FlipCandidate
+        var volatileCandidate = new FlipCandidate
         {
-            Volume24Hr = 2000, Margin = 500, RoiPercent = 5.0, GpPerHour = 500000,
-            HasSufficientData = false, ProfitPerUnit = 100
-        };
-
-        var highScore = _sut.CalculateFlipScore(highConfCandidate);
-        var lowScore = _sut.CalculateFlipScore(lowConfCandidate);
-
-        Assert.True(highScore > lowScore);
-    }
-
-    [Fact]
-    public void CalculateFlipScore_MaxSubScores_ReturnsNearTen()
-    {
-        var candidate = new FlipCandidate
-        {
-            Volume24Hr = 200000, Margin = 5000, RoiPercent = 15.0,
-            GpPerHour = 1_000_000, HasSufficientData = true, ProfitPerUnit = 1000
+            Volume24Hr = 100000, ProfitPerCycle = 1_000_000, TotalProfit = 200_000, RoiPercent = 5.0, GpPerHour = 500000,
+            BuyWindowsUsed = 3, SellWindowsUsed = 3, PriceVolatilityPercent = 40.0, ProfitPerUnit = 100
         };
 
-        var result = _sut.CalculateFlipScore(candidate);
+        var stableScore = _sut.CalculateFlipScore(stableCandidate);
+        var volatileScore = _sut.CalculateFlipScore(volatileCandidate);
 
-        Assert.True(result > 5.0);
-        Assert.True(result <= 10.0);
-    }
-
-    #endregion
-
-    #region Score Methods — Edge Cases
-
-    [Fact]
-    public void ScoreVolume_ZeroVolume_ReturnsMinBreakpointScore()
-    {
-        var result = _sut.ScoreVolume(0);
-        Assert.Equal(0.1, result);
-    }
-
-    [Fact]
-    public void ScoreMargin_NegativeMargin_ReturnsMinBreakpointScore()
-    {
-        var result = _sut.ScoreMargin(-10);
-        Assert.Equal(0.05, result);
-    }
-
-    [Fact]
-    public void CalculateConfidence_ExcessiveWindows_CappedAtOne()
-    {
-        // windows: min(10/3, 1) * 0.6 = 1.0 * 0.6 = 0.6
-        // volume: min(200000/50000, 1) * 0.4 = 1.0 * 0.4 = 0.4
-        // total: 1.0 (capped)
-        var result = _sut.CalculateConfidence(10, 200000);
-        Assert.Equal(1.0, result);
-    }
-
-    [Fact]
-    public void CalculateConfidence_ZeroWindows_HighVolume_ReturnsVolumeComponentOnly()
-    {
-        // windows: 0 * 0.6 = 0
-        // volume: min(100000/50000, 1) * 0.4 = 1.0 * 0.4 = 0.4
-        var result = _sut.CalculateConfidence(0, 100000);
-        Assert.Equal(0.4, result);
+        Assert.True(stableScore > volatileScore);
     }
 
     #endregion

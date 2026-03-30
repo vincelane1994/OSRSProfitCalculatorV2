@@ -163,9 +163,10 @@ public class ProfitCalculationServiceTests
         var result = _sut.CalculateEstimatedFillHours(
             buyLimit: 5000, quantity: 3000, volume24Hr: 24000, buyLimitCycleHours: 4.0);
 
-        // buyHours = min(5000/1000, 4) = min(5, 4) = 4
-        // sellHours = min(3000/1000, 4) = min(3, 4) = 3
-        Assert.Equal(7.0, result);
+        // buyHours = 5000/1000 = 5
+        // sellHours = 3000/1000 = 3
+        // rawFillHours = 8, max(8, 4) = 8
+        Assert.Equal(8.0, result);
     }
 
     [Fact]
@@ -175,21 +176,38 @@ public class ProfitCalculationServiceTests
             buyLimit: 100, quantity: 50, volume24Hr: 0, buyLimitCycleHours: 4.0);
 
         // hourlyVolume = max(0/24, 1) = 1
-        // buyHours = min(100/1, 4) = 4
-        // sellHours = min(50/1, 4) = 4
-        Assert.Equal(8.0, result);
+        // buyHours = 100/1 = 100
+        // sellHours = 50/1 = 50
+        // rawFillHours = 150, max(150, 4) = 150
+        Assert.Equal(150.0, result);
     }
 
     [Fact]
-    public void CalculateEstimatedFillHours_HighVolume_CapsAtCycleHours()
+    public void CalculateEstimatedFillHours_HighVolume_FlooredAtCycleHours()
     {
+        // Item fills very fast but is capped by the buy limit cycle
+        var result = _sut.CalculateEstimatedFillHours(
+            buyLimit: 1000, quantity: 1000, volume24Hr: 200000, buyLimitCycleHours: 4.0);
+
+        // hourlyVolume = 200000/24 = 8333.33
+        // buyHours = 1000/8333.33 = 0.12
+        // sellHours = 1000/8333.33 = 0.12
+        // rawFillHours = 0.24, max(0.24, 4) = 4.0
+        Assert.Equal(4.0, result);
+    }
+
+    [Fact]
+    public void CalculateEstimatedFillHours_SlowFill_NotCapped()
+    {
+        // Item takes longer than 4h to fill — no capping needed
         var result = _sut.CalculateEstimatedFillHours(
             buyLimit: 10000, quantity: 10000, volume24Hr: 240, buyLimitCycleHours: 4.0);
 
         // hourlyVolume = max(240/24, 1) = 10
-        // buyHours = min(10000/10, 4) = min(1000, 4) = 4
-        // sellHours = min(10000/10, 4) = min(1000, 4) = 4
-        Assert.Equal(8.0, result);
+        // buyHours = 10000/10 = 1000
+        // sellHours = 10000/10 = 1000
+        // rawFillHours = 2000, max(2000, 4) = 2000
+        Assert.Equal(2000.0, result);
     }
 
     #endregion

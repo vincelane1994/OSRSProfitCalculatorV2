@@ -59,32 +59,30 @@ public class FlipAnalyzer : IFlipAnalyzer
 
             var recommendation = _priceRecommendationService.CalculateRecommendedPrices(priceData);
 
-            if (!recommendation.HasSufficientData)
-                continue;
-
             if (recommendation.GrossMargin < settings.MinMargin)
-                continue;
-
-            if (_manipulationDetector.IsSuspicious(priceData, 50.0))
                 continue;
 
             var candidate = _flipCalculator.CalculateFlip(
                 itemId, mapping.Name, mapping.Members, mapping.BuyLimit,
-                recommendation, priceData.Volume24Hr, settings);
+                recommendation, priceData, settings);
 
             if (!candidate.IsProfitable)
                 continue;
 
+            if (_manipulationDetector.IsSuspicious(priceData, candidate.RoiPercent))
+                continue;
+
             candidate.FlipScore = _scoringService.CalculateFlipScore(candidate);
             candidate.ConfidenceRating = _scoringService.CalculateConfidence(
-                recommendation.WindowsUsedForBuy, priceData.Volume24Hr);
+                Math.Min(candidate.BuyWindowsUsed, candidate.SellWindowsUsed),
+                candidate.Volume24Hr,
+                candidate.PriceVolatilityPercent);
 
             candidates.Add(candidate);
         }
 
         var ranked = candidates
-            .OrderByDescending(c => c.GpPerHour)
-            .Take(settings.MaxResults)
+            .OrderByDescending(c => c.FlipScore)
             .ToList();
 
         _logger.LogInformation(
