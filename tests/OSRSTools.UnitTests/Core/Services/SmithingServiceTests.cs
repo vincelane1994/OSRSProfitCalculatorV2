@@ -370,6 +370,9 @@ public class SmithingServiceTests
         _dataFetchMock
             .Setup(x => x.GetCompletePriceDataAsync(It.IsAny<CancellationToken>()))
             .ReturnsAsync((IReadOnlyDictionary<int, ItemPriceData>)prices);
+        _dataFetchMock
+            .Setup(x => x.GetMappingsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync((IReadOnlyDictionary<int, ItemMapping>)new Dictionary<int, ItemMapping>());
     }
 
     private void SetupItemPrice(int itemId, int buyPrice, int sellPrice)

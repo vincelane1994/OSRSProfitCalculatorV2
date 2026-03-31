@@ -5,12 +5,29 @@ function safeParseInt(value, defaultVal) {
     return isNaN(parsed) || parsed < 0 ? defaultVal : parsed;
 }
 
+function saveFilters(pageKey, filters) {
+    try { localStorage.setItem('osrs_filters_' + pageKey, JSON.stringify(filters)); } catch (e) { }
+}
+
+function loadFilters(pageKey) {
+    try {
+        var saved = localStorage.getItem('osrs_filters_' + pageKey);
+        return saved ? JSON.parse(saved) : null;
+    } catch (e) { return null; }
+}
+
 var sortState = {
     cannonballs: { field: 'profitPerUnit', ascending: false },
     dartTips:    { field: 'profitPerUnit', ascending: false }
 };
 
 document.addEventListener('DOMContentLoaded', function () {
+    var saved = loadFilters('smithing');
+    if (saved) {
+        if (saved.minProfit) document.getElementById('filterMinProfit').value = saved.minProfit;
+        if (saved.minVolume) document.getElementById('filterMinVolume').value = saved.minVolume;
+        if (saved.profitability) document.getElementById('filterProfitable').value = saved.profitability;
+    }
     applyFilters('cannonballs');
     applyFilters('dartTips');
 
@@ -36,6 +53,12 @@ function applyFilters(tabOverride) {
     var minProfit    = safeParseInt(document.getElementById('filterMinProfit').value, 0);
     var minVolume    = safeParseInt(document.getElementById('filterMinVolume').value, 0);
     var profitable   = document.getElementById('filterProfitable').value;
+
+    saveFilters('smithing', {
+        minProfit: document.getElementById('filterMinProfit').value,
+        minVolume: document.getElementById('filterMinVolume').value,
+        profitability: document.getElementById('filterProfitable').value
+    });
 
     var filtered = data.filter(function (item) {
         if (item.profitPerUnit < minProfit) return false;
@@ -81,10 +104,33 @@ function resetFilters() {
     document.getElementById('filterMinProfit').value  = '';
     document.getElementById('filterMinVolume').value  = '';
     document.getElementById('filterProfitable').value = 'all';
+    localStorage.removeItem('osrs_filters_smithing');
     // Render both tabs; applyFilters updates showingCount only for the active one.
     var active = getActiveTab();
     applyFilters(active === 'cannonballs' ? 'dartTips' : 'cannonballs');
     applyFilters(active);
+}
+
+function exportCsv() {
+    var tab = getActiveTab();
+    var data = tab === 'cannonballs' ? cannonballs : dartTips;
+    var headers = ['Bar','Output','Per Bar','Bar Price','Output Price','Profit','ROI%','Volume 24h'];
+    var rows = data.map(function(item) {
+        return [item.barName, item.name, item.outputPerInput, item.barPrice,
+                item.outputPrice, item.profitPerUnit, item.roiPercent, item.volume24Hr];
+    });
+    var csv = [headers.join(',')]
+        .concat(rows.map(function(r) { return r.map(function(v) {
+            return typeof v === 'string' ? '"' + v.replace(/"/g, '""') + '"' : v;
+        }).join(','); }))
+        .join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'osrs-smithing-' + tab + '-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 function renderTable(bodyId, data) {
@@ -105,13 +151,15 @@ function renderTable(bodyId, data) {
 
         html += '<tr>';
         html += '<td>' + escapeHtml(item.barName) + '</td>';
-        html += '<td>' + escapeHtml(item.name) + '</td>';
+        var iconHtml = item.iconUrl ? '<img src="' + escapeHtml(item.iconUrl) + '" class="item-icon" alt="" loading="lazy"> ' : '';
+        html += '<td>' + iconHtml + escapeHtml(item.name) + '</td>';
         html += '<td class="text-center">' + item.outputPerInput + '</td>';
         html += '<td>' + formatGp(item.barPrice) + '</td>';
         html += '<td>' + formatGp(item.outputPrice) + '</td>';
         html += '<td class="' + profitClass + '">' + formatGp(item.profitPerUnit) + '</td>';
         html += '<td class="' + profitClass + '">' + item.roiPercent.toFixed(2) + '%</td>';
-        html += '<td>' + formatNumber(item.volume24Hr) + '</td>';
+        var volWarning = item.volume24Hr < 1000 ? ' <span title="Low output volume" style="color:var(--profit-negative)">&#9888;</span>' : '';
+        html += '<td>' + formatNumber(item.volume24Hr) + volWarning + '</td>';
         html += '</tr>';
     }
 
@@ -133,3 +181,50 @@ function escapeHtml(text) {
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
 }
+
+// Auto-refresh
+var refreshCountdownTimer = null;
+var refreshSecondsLeft = 0;
+
+function startAutoRefresh(intervalSeconds) {
+    stopAutoRefresh();
+    if (intervalSeconds <= 0) return;
+    refreshSecondsLeft = intervalSeconds;
+    refreshCountdownTimer = setInterval(function() {
+        refreshSecondsLeft--;
+        var el = document.getElementById('refreshCountdown');
+        if (el) el.textContent = refreshSecondsLeft + 's';
+        if (refreshSecondsLeft <= 0) refreshData();
+    }, 1000);
+}
+
+function stopAutoRefresh() {
+    clearInterval(refreshCountdownTimer);
+    var el = document.getElementById('refreshCountdown');
+    if (el) el.textContent = '';
+}
+
+function refreshData() {
+    fetch('/Smithing/Data')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            cannonballs = data.cannonballs;
+            dartTips = data.dartTips;
+            applyFilters('cannonballs');
+            applyFilters('dartTips');
+            var interval = parseInt(document.getElementById('refreshInterval').value);
+            refreshSecondsLeft = interval;
+            if (interval <= 0) stopAutoRefresh();
+        })
+        .catch(function(err) { console.error('Refresh failed:', err); });
+}
+
+(function() {
+    var intervalEl = document.getElementById('refreshInterval');
+    var refreshBtn = document.getElementById('refreshNow');
+    if (intervalEl) {
+        intervalEl.addEventListener('change', function() { startAutoRefresh(parseInt(this.value)); });
+        startAutoRefresh(parseInt(intervalEl.value));
+    }
+    if (refreshBtn) refreshBtn.addEventListener('click', refreshData);
+})();

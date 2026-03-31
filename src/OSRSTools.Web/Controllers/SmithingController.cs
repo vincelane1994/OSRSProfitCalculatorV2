@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using OSRSTools.Core.Interfaces;
 using OSRSTools.Web.ViewModels;
@@ -40,6 +41,24 @@ public class SmithingController : Controller
                 ? "Unable to reach the OSRS pricing service. Please try again in a moment."
                 : "Failed to load Smithing data. Please try again later.";
             return View(new SmithingViewModel { ErrorMessage = errorMessage });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Data()
+    {
+        try
+        {
+            var cannonballsTask = _smithingService.GetCannonballProfitsAsync();
+            var dartTipsTask = _smithingService.GetDartTipProfitsAsync();
+            await Task.WhenAll(cannonballsTask, dartTipsTask);
+            return Json(new { cannonballs = await cannonballsTask, dartTips = await dartTipsTask },
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch Smithing data");
+            return StatusCode(500);
         }
     }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using OSRSTools.Core.Entities;
 using OSRSTools.Core.Interfaces;
@@ -40,6 +41,22 @@ public class FlippingController : Controller
                 ? "Unable to reach the OSRS pricing service. Please try again in a moment."
                 : "Failed to load Flipping data. Please try again later.";
             return View(new FlippingViewModel { ErrorMessage = errorMessage });
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Data()
+    {
+        try
+        {
+            var settings = new FlipSettings();
+            var items = await _flipAnalyzer.AnalyzeFlipsAsync(settings);
+            return Json(items, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to fetch Flipping data");
+            return StatusCode(500);
         }
     }
 }

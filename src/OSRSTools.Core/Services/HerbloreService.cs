@@ -49,7 +49,11 @@ public class HerbloreService : IHerbloreService
         CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("Calculating herb cleaning profitability...");
-        var prices = await _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        var pricesTask = _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        var mappingsTask = _dataFetchService.GetMappingsAsync(cancellationToken);
+        await Task.WhenAll(pricesTask, mappingsTask);
+        var prices = await pricesTask;
+        var mappings = await mappingsTask;
         var results = new List<HerbloreItem>();
 
         foreach (var recipe in Recipes)
@@ -86,7 +90,9 @@ public class HerbloreService : IHerbloreService
                 ProfitPerUnit = profit,
                 Volume24Hr = volume,
                 RoiPercent = roi,
-                Members = recipe.Members
+                Members = recipe.Members,
+                IconUrl = mappings.TryGetValue(recipe.CleanHerbId, out var cleanMapping)
+                    ? FlipAnalyzer.BuildIconUrl(cleanMapping.Icon) : null
             });
         }
 
@@ -96,8 +102,12 @@ public class HerbloreService : IHerbloreService
     public async Task<IReadOnlyList<HerbloreItem>> GetFullProcessProfitsAsync(
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Calculating full process (grimy → unfinished potion) profitability...");
-        var prices = await _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        _logger.LogInformation("Calculating full process (grimy -> unfinished potion) profitability...");
+        var pricesTask = _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        var mappingsTask = _dataFetchService.GetMappingsAsync(cancellationToken);
+        await Task.WhenAll(pricesTask, mappingsTask);
+        var prices = await pricesTask;
+        var mappings = await mappingsTask;
         var results = new List<HerbloreItem>();
 
         if (!prices.TryGetValue(VialOfWaterId, out var vialData))
@@ -146,7 +156,9 @@ public class HerbloreService : IHerbloreService
                 ProfitPerUnit = profit,
                 Volume24Hr = volume,
                 RoiPercent = roi,
-                Members = recipe.Members
+                Members = recipe.Members,
+                IconUrl = mappings.TryGetValue(recipe.UnfinishedPotionId, out var unfMapping)
+                    ? FlipAnalyzer.BuildIconUrl(unfMapping.Icon) : null
             });
         }
 
@@ -156,8 +168,12 @@ public class HerbloreService : IHerbloreService
     public async Task<IReadOnlyList<HerbloreItem>> GetPotionMakingProfitsAsync(
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Calculating potion making (clean herb + secondary → potion) profitability...");
-        var prices = await _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        _logger.LogInformation("Calculating potion making (clean herb + secondary -> potion) profitability...");
+        var pricesTask = _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        var mappingsTask = _dataFetchService.GetMappingsAsync(cancellationToken);
+        await Task.WhenAll(pricesTask, mappingsTask);
+        var prices = await pricesTask;
+        var mappings = await mappingsTask;
         var results = new List<HerbloreItem>();
 
         foreach (var recipe in Recipes)
@@ -198,7 +214,9 @@ public class HerbloreService : IHerbloreService
                 ProfitPerUnit = profit,
                 Volume24Hr = volume,
                 RoiPercent = roi,
-                Members = recipe.Members
+                Members = recipe.Members,
+                IconUrl = mappings.TryGetValue(recipe.PotionId, out var potionMapping)
+                    ? FlipAnalyzer.BuildIconUrl(potionMapping.Icon) : null
             });
         }
 

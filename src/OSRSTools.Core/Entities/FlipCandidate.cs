@@ -75,6 +75,24 @@ public class FlipCandidate
     /// <summary>Raw time window price data for detail view.</summary>
     public List<WindowPriceSnapshot> WindowPrices { get; init; } = [];
 
+    /// <summary>URL to the item's icon image.</summary>
+    public string? IconUrl { get; set; }
+
+    /// <summary>Most recent trade timestamp (max of buy/sell latest times).</summary>
+    public DateTime? LastTradeTime { get; init; }
+
+    /// <summary>Most recent instant-buy price from /latest endpoint.</summary>
+    public int? LatestBuyPrice { get; init; }
+
+    /// <summary>Most recent instant-sell price from /latest endpoint.</summary>
+    public int? LatestSellPrice { get; init; }
+
+    /// <summary>Buy price trend: 1 = rising, 0 = stable, -1 = falling.</summary>
+    public int BuyTrend { get; init; }
+
+    /// <summary>Sell price trend: 1 = rising, 0 = stable, -1 = falling.</summary>
+    public int SellTrend { get; init; }
+
     /// <summary>Whether this flip is profitable after tax.</summary>
     public bool IsProfitable => ProfitPerUnit > 0;
 }

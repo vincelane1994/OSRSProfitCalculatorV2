@@ -92,6 +92,10 @@ public class HighAlchingService : IHighAlchingService
             var profitCalc = _profitCalcService.CalculateSimpleProfit(
                 totalCost, highAlchValue.Value, mapping.BuyLimit);
 
+            // GP/hr: limited by alch rate (1200/hr) or buy limit cycle (buyLimit / 4 per hour)
+            var itemsPerHour = Math.Min(1200.0, mapping.BuyLimit / 4.0);
+            var gpPerHour = profit > 0 ? profit * itemsPerHour : 0;
+
             results.Add(new HighAlchItem
             {
                 ItemId = itemId,
@@ -103,7 +107,9 @@ public class HighAlchingService : IHighAlchingService
                 NatureRuneCost = natureRuneCost,
                 Profit = profit,
                 Volume24Hr = priceData.Volume24Hr,
-                RoiPercent = profitCalc.RoiPercent
+                RoiPercent = profitCalc.RoiPercent,
+                GpPerHour = gpPerHour,
+                IconUrl = FlipAnalyzer.BuildIconUrl(mapping.Icon)
             });
         }
 

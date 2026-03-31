@@ -5,6 +5,17 @@ function safeParseInt(value, defaultVal) {
     return isNaN(parsed) || parsed < 0 ? defaultVal : parsed;
 }
 
+function saveFilters(pageKey, filters) {
+    try { localStorage.setItem('osrs_filters_' + pageKey, JSON.stringify(filters)); } catch (e) { }
+}
+
+function loadFilters(pageKey) {
+    try {
+        var saved = localStorage.getItem('osrs_filters_' + pageKey);
+        return saved ? JSON.parse(saved) : null;
+    } catch (e) { return null; }
+}
+
 var sortState = {
     cleaning:     { field: 'profitPerUnit', ascending: false },
     fullProcess:  { field: 'profitPerUnit', ascending: false },
@@ -12,6 +23,12 @@ var sortState = {
 };
 
 document.addEventListener('DOMContentLoaded', function () {
+    var saved = loadFilters('herblore');
+    if (saved) {
+        if (saved.minProfit) document.getElementById('filterMinProfit').value = saved.minProfit;
+        if (saved.minVolume) document.getElementById('filterMinVolume').value = saved.minVolume;
+        if (saved.profitability) document.getElementById('filterProfitable').value = saved.profitability;
+    }
     applyFilters('cleaning');
     applyFilters('fullProcess');
     applyFilters('potionMaking');
@@ -54,6 +71,12 @@ function applyFilters(tabOverride) {
     var minVolume  = safeParseInt(document.getElementById('filterMinVolume').value, 0);
     var profitable = document.getElementById('filterProfitable').value;
 
+    saveFilters('herblore', {
+        minProfit: document.getElementById('filterMinProfit').value,
+        minVolume: document.getElementById('filterMinVolume').value,
+        profitability: document.getElementById('filterProfitable').value
+    });
+
     var filtered = data.filter(function (item) {
         if (item.profitPerUnit < minProfit) return false;
         if (item.volume24Hr < minVolume) return false;
@@ -95,11 +118,40 @@ function resetFilters() {
     document.getElementById('filterMinProfit').value  = '';
     document.getElementById('filterMinVolume').value  = '';
     document.getElementById('filterProfitable').value = 'all';
+    localStorage.removeItem('osrs_filters_herblore');
     var active = getActiveTab();
     ['cleaning', 'fullProcess', 'potionMaking'].forEach(function (tab) {
         if (tab !== active) applyFilters(tab);
     });
     applyFilters(active);
+}
+
+function exportCsv() {
+    var tab = getActiveTab();
+    var data = getTabData(tab);
+    var headers, rows;
+    if (tab === 'cleaning') {
+        headers = ['Herb','Grimy Price','Clean Price','Profit','ROI%','Volume 24h'];
+        rows = data.map(function(item) { return [item.herbName, item.herbPrice, item.outputPrice, item.profitPerUnit, item.roiPercent, item.volume24Hr]; });
+    } else if (tab === 'fullProcess') {
+        headers = ['Herb','Grimy Price','Vial Price','Unf. Potion Price','Profit','ROI%','Volume 24h'];
+        rows = data.map(function(item) { return [item.herbName, item.herbPrice, item.secondaryPrice, item.outputPrice, item.profitPerUnit, item.roiPercent, item.volume24Hr]; });
+    } else {
+        headers = ['Herb','Potion','Clean Herb Price','Secondary Price','Potion Price','Profit','ROI%','Volume 24h'];
+        rows = data.map(function(item) { return [item.herbName, item.name, item.herbPrice, item.secondaryPrice, item.outputPrice, item.profitPerUnit, item.roiPercent, item.volume24Hr]; });
+    }
+    var csv = [headers.join(',')]
+        .concat(rows.map(function(r) { return r.map(function(v) {
+            return typeof v === 'string' ? '"' + v.replace(/"/g, '""') + '"' : v;
+        }).join(','); }))
+        .join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'osrs-herblore-' + tab + '-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
 }
 
 function renderTable(tab, data) {
@@ -121,7 +173,8 @@ function renderTable(tab, data) {
                         : 'profit-neutral';
 
         html += '<tr>';
-        html += '<td>' + escapeHtml(item.herbName) + '</td>';
+        var iconHtml = item.iconUrl ? '<img src="' + escapeHtml(item.iconUrl) + '" class="item-icon" alt="" loading="lazy"> ' : '';
+        html += '<td>' + iconHtml + escapeHtml(item.herbName) + '</td>';
 
         if (tab === 'potionMaking') {
             html += '<td>' + escapeHtml(item.name) + '</td>';
@@ -136,7 +189,8 @@ function renderTable(tab, data) {
         html += '<td>' + formatGp(item.outputPrice) + '</td>';
         html += '<td class="' + profitClass + '">' + formatGp(item.profitPerUnit) + '</td>';
         html += '<td class="' + profitClass + '">' + item.roiPercent.toFixed(2) + '%</td>';
-        html += '<td>' + formatNumber(item.volume24Hr) + '</td>';
+        var volWarning = item.volume24Hr < 1000 ? ' <span title="Low output volume" style="color:var(--profit-negative)">&#9888;</span>' : '';
+        html += '<td>' + formatNumber(item.volume24Hr) + volWarning + '</td>';
         html += '</tr>';
     }
 
@@ -158,3 +212,50 @@ function escapeHtml(text) {
     div.appendChild(document.createTextNode(text));
     return div.innerHTML;
 }
+
+// Auto-refresh
+var refreshCountdownTimer = null;
+var refreshSecondsLeft = 0;
+
+function startAutoRefresh(intervalSeconds) {
+    stopAutoRefresh();
+    if (intervalSeconds <= 0) return;
+    refreshSecondsLeft = intervalSeconds;
+    refreshCountdownTimer = setInterval(function() {
+        refreshSecondsLeft--;
+        var el = document.getElementById('refreshCountdown');
+        if (el) el.textContent = refreshSecondsLeft + 's';
+        if (refreshSecondsLeft <= 0) refreshData();
+    }, 1000);
+}
+
+function stopAutoRefresh() {
+    clearInterval(refreshCountdownTimer);
+    var el = document.getElementById('refreshCountdown');
+    if (el) el.textContent = '';
+}
+
+function refreshData() {
+    fetch('/Herblore/Data')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            cleaningItems = data.cleaningItems;
+            fullProcessItems = data.fullProcessItems;
+            potionMakingItems = data.potionMakingItems;
+            ['cleaning', 'fullProcess', 'potionMaking'].forEach(function(tab) { applyFilters(tab); });
+            var interval = parseInt(document.getElementById('refreshInterval').value);
+            refreshSecondsLeft = interval;
+            if (interval <= 0) stopAutoRefresh();
+        })
+        .catch(function(err) { console.error('Refresh failed:', err); });
+}
+
+(function() {
+    var intervalEl = document.getElementById('refreshInterval');
+    var refreshBtn = document.getElementById('refreshNow');
+    if (intervalEl) {
+        intervalEl.addEventListener('change', function() { startAutoRefresh(parseInt(this.value)); });
+        startAutoRefresh(parseInt(intervalEl.value));
+    }
+    if (refreshBtn) refreshBtn.addEventListener('click', refreshData);
+})();

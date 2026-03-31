@@ -72,7 +72,11 @@ public class SmithingService : ISmithingService
         IEnumerable<SmithingRecipe> recipes,
         CancellationToken cancellationToken)
     {
-        var prices = await _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        var pricesTask = _dataFetchService.GetCompletePriceDataAsync(cancellationToken);
+        var mappingsTask = _dataFetchService.GetMappingsAsync(cancellationToken);
+        await Task.WhenAll(pricesTask, mappingsTask);
+        var prices = await pricesTask;
+        var mappings = await mappingsTask;
 
         var results = new List<SmithingItem>();
 
@@ -119,6 +123,9 @@ public class SmithingService : ISmithingService
                 outputPerInput: recipe.OutputPerInput,
                 maxQuantity: volume);
 
+            var iconUrl = mappings.TryGetValue(recipe.OutputItemId, out var outputMapping)
+                ? FlipAnalyzer.BuildIconUrl(outputMapping.Icon) : null;
+
             results.Add(new SmithingItem
             {
                 ItemId = recipe.OutputItemId,
@@ -133,7 +140,8 @@ public class SmithingService : ISmithingService
                 ProfitPerUnit = profitCalc.ProfitPerUnit,
                 TotalProfit = profitCalc.TotalProfit,
                 Volume24Hr = volume,
-                RoiPercent = profitCalc.RoiPercent
+                RoiPercent = profitCalc.RoiPercent,
+                IconUrl = iconUrl
             });
         }
 

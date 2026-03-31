@@ -7,119 +7,83 @@
 <h4 class="mb-4">Dashboard</h4>
 
 <div class="row">
-    <!-- High Alching Summary — Carousel -->
+    <!-- High Alching Mini-Table -->
     <div class="col-lg-3 col-md-6">
-        <div class="dashboard-card carousel-card">
-            <h5><i class="bi bi-magic me-2"></i>High Alching</h5>
-            @if (Model.TopHighAlchItems.Any())
-            {
-                <div class="carousel-container">
-                    <button class="carousel-arrow carousel-prev" id="alchPrev" title="Previous item">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <div class="carousel-content">
-                        <div class="stat-value profit-positive" id="alchItemName">--</div>
-                        <div class="stat-label" id="alchItemProfit">--</div>
-                        <div class="stat-label" id="alchItemRoi">--</div>
-                    </div>
-                    <button class="carousel-arrow carousel-next" id="alchNext" title="Next item">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="carousel-dots" id="alchDots"></div>
-            }
-            else
-            {
-                <div class="stat-value">--</div>
-                <div class="stat-label">Top profit/cast</div>
-            }
+        <div class="card mb-3" style="background-color:var(--card-bg);border-color:var(--card-border);">
+            <div class="card-header d-flex justify-content-between" style="background-color:var(--header-bg);border-color:var(--card-border);color:var(--accent);">
+                <span><i class="bi bi-magic me-1"></i> Top High Alch</span>
+                <a asp-controller="HighAlching" asp-action="Index" class="small" style="color:var(--text-secondary);">View all &rarr;</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0" id="topAlchTable" style="color:var(--text-primary);">
+                    <thead><tr style="background-color:var(--header-bg);color:var(--text-secondary);font-size:0.8rem;">
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Item</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Profit</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">ROI%</th>
+                    </tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Flipping Summary — Carousel -->
+    <!-- Flipping Mini-Table -->
     <div class="col-lg-3 col-md-6">
-        <div class="dashboard-card carousel-card">
-            <h5><i class="bi bi-arrow-left-right me-2"></i>Flipping</h5>
-            @if (Model.TopFlipItems.Any())
-            {
-                <div class="carousel-container">
-                    <button class="carousel-arrow carousel-prev" id="flipPrev" title="Previous item">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <div class="carousel-content">
-                        <div class="stat-value profit-positive" id="flipItemName">--</div>
-                        <div class="stat-label" id="flipItemGpHr">--</div>
-                        <div class="stat-label" id="flipItemRoi">--</div>
-                    </div>
-                    <button class="carousel-arrow carousel-next" id="flipNext" title="Next item">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="carousel-dots" id="flipDots"></div>
-            }
-            else
-            {
-                <div class="stat-value">--</div>
-                <div class="stat-label">Top GP/hr</div>
-            }
+        <div class="card mb-3" style="background-color:var(--card-bg);border-color:var(--card-border);">
+            <div class="card-header d-flex justify-content-between" style="background-color:var(--header-bg);border-color:var(--card-border);color:var(--accent);">
+                <span><i class="bi bi-arrow-left-right me-1"></i> Top Flips</span>
+                <a asp-controller="Flipping" asp-action="Index" class="small" style="color:var(--text-secondary);">View all &rarr;</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0" id="topFlipsTable" style="color:var(--text-primary);">
+                    <thead><tr style="background-color:var(--header-bg);color:var(--text-secondary);font-size:0.8rem;">
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Item</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">GP/hr</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">ROI%</th>
+                    </tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Smithing Summary — Carousel -->
+    <!-- Smithing Mini-Table -->
     <div class="col-lg-3 col-md-6">
-        <div class="dashboard-card carousel-card">
-            <h5><i class="bi bi-hammer me-2"></i>Smithing</h5>
-            @if (Model.TopSmithingItems.Any())
-            {
-                <div class="carousel-container">
-                    <button class="carousel-arrow carousel-prev" id="smithPrev" title="Previous item">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <div class="carousel-content">
-                        <div class="stat-value profit-positive" id="smithItemName">--</div>
-                        <div class="stat-label" id="smithItemProfit">--</div>
-                        <div class="stat-label" id="smithItemRoi">--</div>
-                    </div>
-                    <button class="carousel-arrow carousel-next" id="smithNext" title="Next item">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="carousel-dots" id="smithDots"></div>
-            }
-            else
-            {
-                <div class="stat-value">--</div>
-                <div class="stat-label">Best profit/bar</div>
-            }
+        <div class="card mb-3" style="background-color:var(--card-bg);border-color:var(--card-border);">
+            <div class="card-header d-flex justify-content-between" style="background-color:var(--header-bg);border-color:var(--card-border);color:var(--accent);">
+                <span><i class="bi bi-hammer me-1"></i> Top Smithing</span>
+                <a asp-controller="Smithing" asp-action="Index" class="small" style="color:var(--text-secondary);">View all &rarr;</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0" id="topSmithingTable" style="color:var(--text-primary);">
+                    <thead><tr style="background-color:var(--header-bg);color:var(--text-secondary);font-size:0.8rem;">
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Item</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Profit/Bar</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">ROI%</th>
+                    </tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
-    <!-- Herblore Summary — Carousel -->
+    <!-- Herblore Mini-Table -->
     <div class="col-lg-3 col-md-6">
-        <div class="dashboard-card carousel-card">
-            <h5><i class="bi bi-flower1 me-2"></i>Herblore</h5>
-            @if (Model.TopHerbloreItems.Any())
-            {
-                <div class="carousel-container">
-                    <button class="carousel-arrow carousel-prev" id="herbPrev" title="Previous item">
-                        <i class="bi bi-chevron-left"></i>
-                    </button>
-                    <div class="carousel-content">
-                        <div class="stat-value profit-positive" id="herbItemName">--</div>
-                        <div class="stat-label" id="herbItemProfit">--</div>
-                        <div class="stat-label" id="herbItemMethod">--</div>
-                    </div>
-                    <button class="carousel-arrow carousel-next" id="herbNext" title="Next item">
-                        <i class="bi bi-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="carousel-dots" id="herbDots"></div>
-            }
-            else
-            {
-                <div class="stat-value">--</div>
-                <div class="stat-label">Best profit/herb</div>
-            }
+        <div class="card mb-3" style="background-color:var(--card-bg);border-color:var(--card-border);">
+            <div class="card-header d-flex justify-content-between" style="background-color:var(--header-bg);border-color:var(--card-border);color:var(--accent);">
+                <span><i class="bi bi-flower1 me-1"></i> Top Herblore</span>
+                <a asp-controller="Herblore" asp-action="Index" class="small" style="color:var(--text-secondary);">View all &rarr;</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0" id="topHerbloreTable" style="color:var(--text-primary);">
+                    <thead><tr style="background-color:var(--header-bg);color:var(--text-secondary);font-size:0.8rem;">
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Item</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Profit</th>
+                        <th style="border-color:var(--card-border);padding:6px 8px;">Method</th>
+                    </tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>

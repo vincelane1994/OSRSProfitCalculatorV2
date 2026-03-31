@@ -66,12 +66,32 @@
             <label for="filterMaxFillHours">Max Fill Time (hrs)</label>
             <input type="number" id="filterMaxFillHours" class="form-control form-control-sm" step="1" min="0" placeholder="No limit" onchange="applyFilters()" />
         </div>
-        <div class="col-12 col-md-2">
+        <div class="col-6 col-md-1">
             <button class="btn btn-sm btn-outline-warning w-100" onclick="resetFilters()">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
             </button>
         </div>
+        <div class="col-6 col-md-3">
+            <label>Auto-refresh</label>
+            <div class="d-flex align-items-center gap-2">
+                <select id="refreshInterval" class="form-select form-select-sm" style="width:auto">
+                    <option value="0">Off</option>
+                    <option value="300" selected>5 min</option>
+                    <option value="600">10 min</option>
+                </select>
+                <span id="refreshCountdown" class="text-secondary small"></span>
+                <button id="refreshNow" class="btn btn-sm btn-outline-secondary" title="Refresh now">&#8635;</button>
+            </div>
+        </div>
     </div>
+</div>
+
+<!-- Search & Favorites -->
+<div class="d-flex gap-2 mb-2">
+    <input type="text" id="itemSearch" class="form-control form-control-sm"
+           placeholder="Search items..." style="max-width: 300px; background-color: var(--sidebar-bg); border-color: var(--card-border); color: var(--text-primary);">
+    <button id="favoritesToggle" class="btn btn-sm btn-outline-warning" title="Show favorites only"
+            onclick="toggleFavoritesFilter()">&#9733;</button>
 </div>
 
 <!-- Data Table -->
@@ -79,6 +99,7 @@
     <table class="data-table" id="flipTable">
         <thead>
             <tr>
+                <th style="width:36px"></th>
                 <th onclick="sortTable('name')">Name <i class="bi bi-chevron-expand"></i></th>
                 <th onclick="sortTable('recommendedBuyPrice')">Buy <i class="bi bi-chevron-expand"></i></th>
                 <th onclick="sortTable('recommendedSellPrice')">Sell <i class="bi bi-chevron-expand"></i></th>
@@ -93,6 +114,7 @@
                 <th onclick="sortTable('confidenceRating')">Confidence <i class="bi bi-chevron-expand"></i></th>
                 <th onclick="sortTable('flipScore')">Score <i class="bi bi-chevron-expand"></i></th>
                 <th onclick="sortTable('volume24Hr')">Volume <i class="bi bi-chevron-expand"></i></th>
+                <th onclick="sortTable('lastTradeTime')">Last Trade <i class="bi bi-chevron-expand"></i></th>
             </tr>
         </thead>
         <tbody id="flipTableBody">

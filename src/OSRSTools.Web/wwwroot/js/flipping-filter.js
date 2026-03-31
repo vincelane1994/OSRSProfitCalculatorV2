@@ -4,9 +4,59 @@ var currentSort = { field: 'flipScore', ascending: false };
 var currentPage = 1;
 var pageSize = 50;
 var currentFiltered = [];
+var showFavoritesOnly = false;
+
+function getFavorites(pageKey) {
+    try { return JSON.parse(localStorage.getItem('osrs_favorites_' + pageKey) || '[]'); }
+    catch (e) { return []; }
+}
+
+function toggleFavorite(pageKey, itemId) {
+    var favs = getFavorites(pageKey);
+    var idx = favs.indexOf(itemId);
+    if (idx >= 0) favs.splice(idx, 1);
+    else favs.push(itemId);
+    localStorage.setItem('osrs_favorites_' + pageKey, JSON.stringify(favs));
+    applyFilters();
+}
+
+function toggleFavoritesFilter() {
+    showFavoritesOnly = !showFavoritesOnly;
+    var btn = document.getElementById('favoritesToggle');
+    if (btn) btn.classList.toggle('active', showFavoritesOnly);
+    applyFilters();
+}
+
+function saveFilters(pageKey, filters) {
+    try { localStorage.setItem('osrs_filters_' + pageKey, JSON.stringify(filters)); } catch (e) { }
+}
+
+function loadFilters(pageKey) {
+    try {
+        var saved = localStorage.getItem('osrs_filters_' + pageKey);
+        return saved ? JSON.parse(saved) : null;
+    } catch (e) { return null; }
+}
 
 document.addEventListener('DOMContentLoaded', function () {
+    var saved = loadFilters('flipping');
+    if (saved) {
+        if (saved.members) document.getElementById('filterMembers').value = saved.members;
+        if (saved.minMargin) document.getElementById('filterMinMargin').value = saved.minMargin;
+        if (saved.minVolume) document.getElementById('filterMinVolume').value = saved.minVolume;
+        if (saved.minGpHr) document.getElementById('filterMinGpHr').value = saved.minGpHr;
+        if (saved.minConfidence) document.getElementById('filterMinConfidence').value = saved.minConfidence;
+        if (saved.maxFillHours) document.getElementById('filterMaxFillHours').value = saved.maxFillHours;
+    }
     applyFilters();
+
+    var searchEl = document.getElementById('itemSearch');
+    if (searchEl) {
+        searchEl.addEventListener('input', function() {
+            clearTimeout(this._debounce);
+            this._debounce = setTimeout(applyFilters, 200);
+        });
+    }
 });
 
 function safeParseInt(value, defaultVal) {
@@ -30,6 +80,15 @@ function applyFilters() {
     var maxFillHours = maxFillHoursVal !== '' ? parseFloat(maxFillHoursVal) : Infinity;
     if (isNaN(maxFillHours) || maxFillHours < 0) maxFillHours = Infinity;
 
+    saveFilters('flipping', {
+        members: membersFilter, minMargin: document.getElementById('filterMinMargin').value,
+        minVolume: document.getElementById('filterMinVolume').value, minGpHr: document.getElementById('filterMinGpHr').value,
+        minConfidence: document.getElementById('filterMinConfidence').value, maxFillHours: document.getElementById('filterMaxFillHours').value
+    });
+
+    var searchEl = document.getElementById('itemSearch');
+    var searchTerm = searchEl ? searchEl.value.toLowerCase() : '';
+
     var filtered = items.filter(function (item) {
         if (membersFilter === 'members' && !item.members) return false;
         if (membersFilter === 'f2p' && item.members) return false;
@@ -38,8 +97,14 @@ function applyFilters() {
         if (item.gpPerHour < minGpHr) return false;
         if (item.confidenceRating < minConfidence) return false;
         if (item.estimatedFillHours > maxFillHours) return false;
+        if (searchTerm && item.name.toLowerCase().indexOf(searchTerm) === -1) return false;
         return true;
     });
+
+    if (showFavoritesOnly) {
+        var favs = getFavorites('flipping');
+        filtered = filtered.filter(function(item) { return favs.indexOf(item.itemId) >= 0; });
+    }
 
     filtered.sort(function (a, b) {
         var valA = a[currentSort.field];
@@ -156,22 +221,47 @@ function resetFilters() {
     document.getElementById('filterMinGpHr').value = '';
     document.getElementById('filterMinConfidence').value = '';
     document.getElementById('filterMaxFillHours').value = '';
+    localStorage.removeItem('osrs_filters_flipping');
     applyFilters();
+}
+
+function trendArrow(trend) {
+    if (trend === 1) return ' <span class="profit-positive" title="Rising">&#9650;</span>';
+    if (trend === -1) return ' <span class="profit-negative" title="Falling">&#9660;</span>';
+    return '';
+}
+
+function formatAge(isoString) {
+    if (!isoString) return '<span class="text-secondary">--</span>';
+    var seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
+    if (seconds < 0) seconds = 0;
+    var ageClass = seconds > 900 ? 'profit-negative' : (seconds > 300 ? 'text-secondary' : 'profit-positive');
+    var text;
+    if (seconds < 60) text = seconds + 's ago';
+    else if (seconds < 3600) text = Math.floor(seconds / 60) + 'm ago';
+    else if (seconds < 86400) text = Math.floor(seconds / 3600) + 'h ago';
+    else text = Math.floor(seconds / 86400) + 'd ago';
+    return '<span class="' + ageClass + '">' + text + '</span>';
 }
 
 function renderTable(data) {
     var tbody = document.getElementById('flipTableBody');
     var html = '';
 
+    var favs = getFavorites('flipping');
+
     for (var i = 0; i < data.length; i++) {
         var item = data[i];
         var profitClass = item.profitPerUnit > 0 ? 'profit-positive' : item.profitPerUnit < 0 ? 'profit-negative' : 'profit-neutral';
         var confidenceClass = item.confidenceRating >= 0.8 ? 'profit-positive' : item.confidenceRating >= 0.5 ? 'text-warning' : 'profit-negative';
+        var isFav = favs.indexOf(item.itemId) >= 0;
 
         html += '<tr style="cursor:pointer" onclick="showItemDetail(' + item.itemId + ')">';
-        html += '<td>' + escapeHtml(item.name) + (item.members ? ' <i class="bi bi-star-fill text-warning" style="font-size:0.7rem" title="Members"></i>' : '') + '</td>';
-        html += '<td>' + formatGp(item.recommendedBuyPrice) + '</td>';
-        html += '<td>' + formatGp(item.recommendedSellPrice) + '</td>';
+        html += '<td class="text-center" style="cursor:pointer;color:' + (isFav ? 'var(--accent)' : 'var(--text-secondary)') + '" onclick="event.stopPropagation();toggleFavorite(\'flipping\',' + item.itemId + ')">' + (isFav ? '&#9733;' : '&#9734;') + '</td>';
+        var iconHtml = item.iconUrl ? '<img src="' + escapeHtml(item.iconUrl) + '" class="item-icon" alt="" loading="lazy"> ' : '';
+        html += '<td>' + iconHtml + escapeHtml(item.name) + (item.members ? ' <i class="bi bi-star-fill text-warning" style="font-size:0.7rem" title="Members"></i>' : '') + '</td>';
+        html += '<td>' + formatGp(item.recommendedBuyPrice) + trendArrow(item.buyTrend) + '</td>';
+        html += '<td>' + formatGp(item.recommendedSellPrice) + trendArrow(item.sellTrend) + '</td>';
         html += '<td class="' + profitClass + '">' + formatGp(item.margin) + '</td>';
         html += '<td>' + formatGp(item.taxAmount) + '</td>';
         html += '<td class="' + profitClass + '">' + formatGp(item.profitPerUnit) + '</td>';
@@ -182,7 +272,14 @@ function renderTable(data) {
         html += '<td>' + formatGpHr(item.gpPerHour) + '</td>';
         html += '<td class="' + confidenceClass + '">' + item.confidenceRating.toFixed(2) + '</td>';
         html += '<td>' + item.flipScore.toFixed(1) + '</td>';
-        html += '<td>' + formatNumber(item.volume24Hr) + '</td>';
+        var volHtml = formatNumber(item.volume24Hr);
+        var w24 = (item.windowPrices || []).find(function(w) { return w.window === '24 hour'; });
+        if (w24 && w24.buyVolume && w24.sellVolume) {
+            var bPct = w24.buyVolume / (w24.buyVolume + w24.sellVolume) * 100;
+            if (bPct < 25 || bPct > 75) volHtml += ' <span title="Volume imbalance" style="color:var(--profit-negative)">&#9888;</span>';
+        }
+        html += '<td>' + volHtml + '</td>';
+        html += '<td>' + formatAge(item.lastTradeTime) + '</td>';
         html += '</tr>';
     }
 
@@ -219,6 +316,33 @@ function detailStat(label, value) {
         + '</div>';
 }
 
+function exportCsv() {
+    var headers = ['Name','Buy','Sell','Margin','Tax','Profit/Unit','Qty',
+                   'Total Profit','Profit/Cycle','ROI%','GP/hr','Confidence',
+                   'Score','Volume 24h','Last Trade'];
+    var rows = currentFiltered.map(function(item) {
+        return [
+            item.name, item.recommendedBuyPrice, item.recommendedSellPrice,
+            item.margin, item.taxAmount, item.profitPerUnit, item.quantity,
+            item.totalProfit, item.profitPerCycle, item.roiPercent,
+            Math.round(item.gpPerHour), item.confidenceRating,
+            item.flipScore, item.volume24Hr, item.lastTradeTime || ''
+        ];
+    });
+    var csv = [headers.join(',')]
+        .concat(rows.map(function(r) { return r.map(function(v) {
+            return typeof v === 'string' ? '"' + v.replace(/"/g, '""') + '"' : v;
+        }).join(','); }))
+        .join('\n');
+    var blob = new Blob([csv], { type: 'text/csv' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = 'osrs-flipping-' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
 function showItemDetail(itemId) {
     var item = items.find(function (i) { return i.itemId === itemId; });
     if (!item) return;
@@ -232,10 +356,24 @@ function showItemDetail(itemId) {
     // Pricing section
     html += '<h6 style="color:#e9ecef;border-bottom:1px solid #495057;padding-bottom:6px;margin-bottom:12px">Pricing</h6>';
     html += '<div class="row">';
-    html += detailStat('Buy Price', formatGp(item.recommendedBuyPrice));
-    html += detailStat('Sell Price', formatGp(item.recommendedSellPrice));
+    html += detailStat('Buy Price', formatGp(item.recommendedBuyPrice) + trendArrow(item.buyTrend));
+    html += detailStat('Sell Price', formatGp(item.recommendedSellPrice) + trendArrow(item.sellTrend));
     html += detailStat('Margin', formatGp(item.margin));
     html += detailStat('Tax', formatGp(item.taxAmount));
+
+    // Instant price gap (Improvement 4)
+    if (item.latestBuyPrice) {
+        var buyGap = Math.abs(item.latestBuyPrice - item.recommendedBuyPrice) / item.recommendedBuyPrice * 100;
+        var buyGapClass = buyGap > 5 ? 'profit-negative' : '';
+        var buyDir = item.latestBuyPrice > item.recommendedBuyPrice ? '+' : '';
+        html += detailStat('Latest Buy', formatGp(item.latestBuyPrice) + ' <span class="' + buyGapClass + '" style="font-size:0.8rem">(' + buyDir + buyGap.toFixed(1) + '%)</span>');
+    }
+    if (item.latestSellPrice) {
+        var sellGap = Math.abs(item.latestSellPrice - item.recommendedSellPrice) / item.recommendedSellPrice * 100;
+        var sellGapClass = sellGap > 5 ? 'profit-negative' : '';
+        var sellDir = item.latestSellPrice > item.recommendedSellPrice ? '+' : '';
+        html += detailStat('Latest Sell', formatGp(item.latestSellPrice) + ' <span class="' + sellGapClass + '" style="font-size:0.8rem">(' + sellDir + sellGap.toFixed(1) + '%)</span>');
+    }
     html += '</div>';
 
     // Profitability section
@@ -260,6 +398,17 @@ function showItemDetail(itemId) {
     html += detailStat('Confidence', item.confidenceRating.toFixed(2));
     html += detailStat('Buy Windows', item.buyWindowsUsed + ' of 4');
     html += detailStat('Sell Windows', item.sellWindowsUsed + ' of 4');
+    html += detailStat('Last Trade', formatAge(item.lastTradeTime));
+
+    // Volume balance (Improvement 3)
+    var w24h = (item.windowPrices || []).find(function(w) { return w.window === '24 hour'; });
+    if (w24h && w24h.buyVolume && w24h.sellVolume) {
+        var totalBuySell = w24h.buyVolume + w24h.sellVolume;
+        var buyPct = Math.round(w24h.buyVolume / totalBuySell * 100);
+        var sellPct = 100 - buyPct;
+        var balanceClass = Math.abs(buyPct - 50) > 25 ? 'profit-negative' : 'profit-positive';
+        html += detailStat('Volume Balance', '<span class="' + balanceClass + '">Buy ' + buyPct + '% / Sell ' + sellPct + '%</span>');
+    }
     html += '</div>';
 
     // Window prices table
@@ -335,3 +484,50 @@ function showItemDetail(itemId) {
     var modal = new bootstrap.Modal(document.getElementById('itemDetailModal'));
     modal.show();
 }
+
+// Auto-refresh
+var refreshCountdownTimer = null;
+var refreshSecondsLeft = 0;
+
+function startAutoRefresh(intervalSeconds) {
+    stopAutoRefresh();
+    if (intervalSeconds <= 0) return;
+    refreshSecondsLeft = intervalSeconds;
+    refreshCountdownTimer = setInterval(function() {
+        refreshSecondsLeft--;
+        var el = document.getElementById('refreshCountdown');
+        if (el) el.textContent = refreshSecondsLeft + 's';
+        if (refreshSecondsLeft <= 0) refreshData();
+    }, 1000);
+}
+
+function stopAutoRefresh() {
+    clearInterval(refreshCountdownTimer);
+    var el = document.getElementById('refreshCountdown');
+    if (el) el.textContent = '';
+}
+
+function refreshData() {
+    fetch('/Flipping/Data')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            items = data;
+            applyFilters();
+            var interval = parseInt(document.getElementById('refreshInterval').value);
+            refreshSecondsLeft = interval;
+            if (interval <= 0) stopAutoRefresh();
+            var syncEl = document.getElementById('syncStatus');
+            if (syncEl) syncEl.querySelector('span').textContent = 'Last sync: ' + new Date().toLocaleTimeString() + ' (auto)';
+        })
+        .catch(function(err) { console.error('Refresh failed:', err); });
+}
+
+(function() {
+    var intervalEl = document.getElementById('refreshInterval');
+    var refreshBtn = document.getElementById('refreshNow');
+    if (intervalEl) {
+        intervalEl.addEventListener('change', function() { startAutoRefresh(parseInt(this.value)); });
+        startAutoRefresh(parseInt(intervalEl.value));
+    }
+    if (refreshBtn) refreshBtn.addEventListener('click', refreshData);
+})();

@@ -54,10 +54,22 @@
                 <option value="unprofitable">Unprofitable Only</option>
             </select>
         </div>
-        <div class="col-12 col-md-3">
+        <div class="col-6 col-md-2">
             <button class="btn btn-sm btn-outline-warning w-100" onclick="resetFilters()">
                 <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
             </button>
+        </div>
+        <div class="col-6 col-md-3">
+            <label>Auto-refresh</label>
+            <div class="d-flex align-items-center gap-2">
+                <select id="refreshInterval" class="form-select form-select-sm" style="width:auto">
+                    <option value="0">Off</option>
+                    <option value="300" selected>5 min</option>
+                    <option value="600">10 min</option>
+                </select>
+                <span id="refreshCountdown" class="text-secondary small"></span>
+                <button id="refreshNow" class="btn btn-sm btn-outline-secondary" title="Refresh now">&#8635;</button>
+            </div>
         </div>
     </div>
 </div>

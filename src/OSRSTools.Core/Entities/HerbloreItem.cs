@@ -45,6 +45,9 @@ public class HerbloreItem
     /// <summary>All herblore operations are members-only.</summary>
     public bool Members { get; init; }
 
+    /// <summary>URL to the item's icon image.</summary>
+    public string? IconUrl { get; init; }
+
     /// <summary>Whether this operation yields a positive profit.</summary>
     public bool IsProfitable => ProfitPerUnit > 0;
 }

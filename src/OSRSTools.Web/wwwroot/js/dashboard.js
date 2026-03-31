@@ -1,7 +1,6 @@
-// Dashboard carousels for all profit calculator panels
+// Dashboard mini-tables for all profit calculator panels
 
 (function () {
-    var AUTO_INTERVAL = 5000; // 5 seconds
 
     function formatGp(value) {
         if (value >= 1000000) return (value / 1000000).toFixed(1) + 'M gp';
@@ -15,114 +14,66 @@
         return Math.round(value).toLocaleString() + ' gp/hr';
     }
 
-    function createCarousel(items, ids, renderFn) {
-        if (!items || items.length === 0) return;
+    function escapeHtml(text) {
+        var div = document.createElement('div');
+        div.appendChild(document.createTextNode(text));
+        return div.innerHTML;
+    }
 
-        var currentIndex = 0;
-        var autoTimer = null;
-
-        var prevBtn = document.getElementById(ids.prev);
-        var nextBtn = document.getElementById(ids.next);
-        var dotsContainer = document.getElementById(ids.dots);
-
-        if (!prevBtn || !nextBtn || !dotsContainer) return;
-
-        function buildDots() {
-            for (var i = 0; i < items.length; i++) {
-                var dot = document.createElement('span');
-                dot.className = 'carousel-dot';
-                dot.dataset.index = i;
-                dot.addEventListener('click', function () {
-                    showItem(parseInt(this.dataset.index));
-                    resetAutoTimer();
-                });
-                dotsContainer.appendChild(dot);
-            }
+    function renderMiniTable(tableId, items, columns) {
+        var table = document.getElementById(tableId);
+        if (!table) return;
+        var tbody = table.querySelector('tbody');
+        if (!items || items.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="' + columns.length + '" class="text-center" style="color:var(--text-secondary);padding:12px;">No data</td></tr>';
+            return;
         }
-
-        function updateDots() {
-            var dots = dotsContainer.querySelectorAll('.carousel-dot');
-            for (var i = 0; i < dots.length; i++) {
-                dots[i].classList.toggle('active', i === currentIndex);
-            }
-        }
-
-        function showItem(index) {
-            currentIndex = index;
-            renderFn(items[index]);
-            updateDots();
-        }
-
-        function nextItem() {
-            showItem((currentIndex + 1) % items.length);
-        }
-
-        function prevItem() {
-            showItem((currentIndex - 1 + items.length) % items.length);
-        }
-
-        function startAutoTimer() {
-            autoTimer = setInterval(nextItem, AUTO_INTERVAL);
-        }
-
-        function resetAutoTimer() {
-            clearInterval(autoTimer);
-            startAutoTimer();
-        }
-
-        buildDots();
-        showItem(0);
-        startAutoTimer();
-
-        prevBtn.addEventListener('click', function () { prevItem(); resetAutoTimer(); });
-        nextBtn.addEventListener('click', function () { nextItem(); resetAutoTimer(); });
+        tbody.innerHTML = items.map(function(item) {
+            return '<tr style="border-color:var(--card-border);">' + columns.map(function(col) {
+                return '<td style="border-color:var(--card-border);padding:6px 8px;font-size:0.85rem;">' + col.format(item) + '</td>';
+            }).join('') + '</tr>';
+        }).join('');
     }
 
     document.addEventListener('DOMContentLoaded', function () {
-
-        // High Alching carousel
-        createCarousel(
+        // High Alching
+        renderMiniTable('topAlchTable',
             typeof topAlchItems !== 'undefined' ? topAlchItems : [],
-            { prev: 'alchPrev', next: 'alchNext', dots: 'alchDots' },
-            function (item) {
-                document.getElementById('alchItemName').textContent = item.name;
-                document.getElementById('alchItemProfit').textContent = 'Profit: ' + formatGp(item.profit);
-                document.getElementById('alchItemRoi').textContent = 'ROI: ' + item.roiPercent.toFixed(2) + '%';
-            }
+            [
+                { format: function(i) { return (i.iconUrl ? '<img src="' + escapeHtml(i.iconUrl) + '" class="item-icon" alt="" loading="lazy"> ' : '') + escapeHtml(i.name); } },
+                { format: function(i) { return '<span class="profit-positive">' + formatGp(i.profit) + '</span>'; } },
+                { format: function(i) { return i.roiPercent.toFixed(2) + '%'; } }
+            ]
         );
 
-        // Flipping carousel
-        createCarousel(
+        // Flipping
+        renderMiniTable('topFlipsTable',
             typeof topFlipItems !== 'undefined' ? topFlipItems : [],
-            { prev: 'flipPrev', next: 'flipNext', dots: 'flipDots' },
-            function (item) {
-                document.getElementById('flipItemName').textContent = item.name;
-                document.getElementById('flipItemGpHr').textContent = formatGpHr(item.gpPerHour);
-                document.getElementById('flipItemRoi').textContent = 'ROI: ' + item.roiPercent.toFixed(2) + '%';
-            }
+            [
+                { format: function(i) { return (i.iconUrl ? '<img src="' + escapeHtml(i.iconUrl) + '" class="item-icon" alt="" loading="lazy"> ' : '') + escapeHtml(i.name); } },
+                { format: function(i) { return '<span class="profit-positive">' + formatGpHr(i.gpPerHour) + '</span>'; } },
+                { format: function(i) { return i.roiPercent.toFixed(2) + '%'; } }
+            ]
         );
 
-        // Smithing carousel
-        createCarousel(
+        // Smithing
+        renderMiniTable('topSmithingTable',
             typeof topSmithingItems !== 'undefined' ? topSmithingItems : [],
-            { prev: 'smithPrev', next: 'smithNext', dots: 'smithDots' },
-            function (item) {
-                document.getElementById('smithItemName').textContent = item.name;
-                document.getElementById('smithItemProfit').textContent = 'Profit: ' + formatGp(item.profitPerUnit) + '/bar';
-                document.getElementById('smithItemRoi').textContent = 'ROI: ' + item.roiPercent.toFixed(2) + '%';
-            }
+            [
+                { format: function(i) { return (i.iconUrl ? '<img src="' + escapeHtml(i.iconUrl) + '" class="item-icon" alt="" loading="lazy"> ' : '') + escapeHtml(i.name); } },
+                { format: function(i) { return '<span class="profit-positive">' + formatGp(i.profitPerUnit) + '/bar</span>'; } },
+                { format: function(i) { return i.roiPercent.toFixed(2) + '%'; } }
+            ]
         );
 
-        // Herblore carousel
-        createCarousel(
+        // Herblore
+        renderMiniTable('topHerbloreTable',
             typeof topHerbloreItems !== 'undefined' ? topHerbloreItems : [],
-            { prev: 'herbPrev', next: 'herbNext', dots: 'herbDots' },
-            function (item) {
-                document.getElementById('herbItemName').textContent = item.name;
-                document.getElementById('herbItemProfit').textContent = 'Profit: ' + formatGp(item.profitPerUnit) + '/op';
-                document.getElementById('herbItemMethod').textContent = item.method;
-            }
+            [
+                { format: function(i) { return (i.iconUrl ? '<img src="' + escapeHtml(i.iconUrl) + '" class="item-icon" alt="" loading="lazy"> ' : '') + escapeHtml(i.name); } },
+                { format: function(i) { return '<span class="profit-positive">' + formatGp(i.profitPerUnit) + '</span>'; } },
+                { format: function(i) { return i.method || '--'; } }
+            ]
         );
-
     });
 })();

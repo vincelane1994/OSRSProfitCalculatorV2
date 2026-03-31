@@ -45,6 +45,9 @@ public class SmithingItem
     /// <summary>Return on investment percentage: (ProfitPerUnit / BarPrice) * 100.</summary>
     public double RoiPercent { get; init; }
 
+    /// <summary>URL to the item's icon image.</summary>
+    public string? IconUrl { get; init; }
+
     /// <summary>Whether this smithing operation is profitable.</summary>
     public bool IsProfitable => ProfitPerUnit > 0;
 }

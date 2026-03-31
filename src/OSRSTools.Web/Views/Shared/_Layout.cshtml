@@ -88,7 +88,7 @@
                             </a>
                         </li>
                         <li>
-                            <a asp-controller="Report" asp-action="Index" class="nav-link @(currentController == "Report" ? "active" : "")" title="Export">
+                            <a class="nav-link" href="#" onclick="if(typeof exportCsv==='function')exportCsv();return false;" title="Export CSV">
                                 <i class="bi bi-download"></i>
                                 <span class="nav-label">Export</span>
                             </a>

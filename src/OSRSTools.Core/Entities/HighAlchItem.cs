@@ -36,6 +36,12 @@ public class HighAlchItem
     /// <summary>Return on investment percentage.</summary>
     public double RoiPercent { get; init; }
 
+    /// <summary>Estimated GP per hour based on buy limit and 4-hour cycle.</summary>
+    public double GpPerHour { get; init; }
+
+    /// <summary>URL to the item's icon image.</summary>
+    public string? IconUrl { get; init; }
+
     /// <summary>Whether this item is profitable to alch.</summary>
     public bool IsProfitable => Profit > 0;
 }

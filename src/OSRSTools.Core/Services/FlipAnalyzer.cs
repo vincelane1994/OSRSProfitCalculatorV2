@@ -72,6 +72,7 @@ public class FlipAnalyzer : IFlipAnalyzer
             if (_manipulationDetector.IsSuspicious(priceData, candidate.RoiPercent))
                 continue;
 
+            candidate.IconUrl = BuildIconUrl(mapping.Icon);
             candidate.FlipScore = _scoringService.CalculateFlipScore(candidate);
             candidate.ConfidenceRating = _scoringService.CalculateConfidence(
                 Math.Min(candidate.BuyWindowsUsed, candidate.SellWindowsUsed),
@@ -90,5 +91,12 @@ public class FlipAnalyzer : IFlipAnalyzer
             candidates.Count, ranked.Count);
 
         return ranked;
+    }
+
+    internal static string? BuildIconUrl(string? icon)
+    {
+        return !string.IsNullOrEmpty(icon)
+            ? "https://oldschool.runescape.wiki/images/" + Uri.EscapeDataString(icon)
+            : null;
     }
 }

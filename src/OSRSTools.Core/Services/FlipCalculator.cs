@@ -62,6 +62,18 @@ public class FlipCalculator : IFlipCalculator
         // 10. Price volatility: compare 5m vs 6h averages
         var volatility = ComputeVolatility(priceData);
 
+        // 11. Last trade time (most recent of buy/sell)
+        DateTime? lastTrade = null;
+        if (priceData.LatestBuyTime.HasValue && priceData.LatestSellTime.HasValue)
+            lastTrade = priceData.LatestBuyTime > priceData.LatestSellTime
+                ? priceData.LatestBuyTime : priceData.LatestSellTime;
+        else
+            lastTrade = priceData.LatestBuyTime ?? priceData.LatestSellTime;
+
+        // 12. Trend arrows: compare 5m vs 1h averages
+        var has5m = priceData.TimeWindows.TryGetValue(TimeWindow.FiveMinute, out var tw5m);
+        var has1h = priceData.TimeWindows.TryGetValue(TimeWindow.OneHour, out var tw1h);
+
         return new FlipCandidate
         {
             ItemId = itemId,
@@ -85,6 +97,11 @@ public class FlipCalculator : IFlipCalculator
             PriceVolatilityPercent = volatility,
             ProfitPerCycle = profitPerCycle,
             WindowPrices = BuildWindowSnapshots(priceData),
+            LastTradeTime = lastTrade,
+            LatestBuyPrice = priceData.LatestBuyPrice,
+            LatestSellPrice = priceData.LatestSellPrice,
+            BuyTrend = has5m && has1h ? ComputeTrend(tw5m!.AvgBuyPrice, tw1h!.AvgBuyPrice) : 0,
+            SellTrend = has5m && has1h ? ComputeTrend(tw5m!.AvgSellPrice, tw1h!.AvgSellPrice) : 0,
             ConfidenceRating = 0,
             FlipScore = 0
         };
@@ -140,6 +157,16 @@ public class FlipCalculator : IFlipCalculator
         }
 
         return (int)Math.Min(maxVolume, int.MaxValue);
+    }
+
+    internal static int ComputeTrend(int? shortTermPrice, int? longTermPrice)
+    {
+        if (!shortTermPrice.HasValue || !longTermPrice.HasValue || longTermPrice.Value == 0)
+            return 0;
+        var pctChange = (double)(shortTermPrice.Value - longTermPrice.Value) / longTermPrice.Value * 100;
+        if (pctChange > 2.0) return 1;   // Rising
+        if (pctChange < -2.0) return -1; // Falling
+        return 0;                         // Stable
     }
 
     private static double ComputeVolatility(ItemPriceData data)
